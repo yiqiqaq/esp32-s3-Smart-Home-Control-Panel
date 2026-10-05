@@ -1,0 +1,36 @@
+#pragma once
+#include <stdint.h>
+#include <stdbool.h>
+#include "esp_err.h"
+#include "switch_inputs.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Where a channel command came from. Sources converge on the same output
+ * driver so the relay and the state model stay authoritative regardless of
+ * who asked. */
+enum {
+    CH_SRC_LOCAL = 0, /* physical switch */
+    CH_SRC_SCENE,     /* scene engine */
+    CH_SRC_MATTER,    /* On/Off write from a Matter client */
+};
+
+/* Commands a Matter write or a scene need applied to one channel. */
+esp_err_t channel_router_init(const uint8_t switch_gpio[3], const int8_t relay_gpio[3]);
+void channel_router_set_channel(uint8_t index, bool on, uint8_t source);
+
+/* Entry point wired into switch_inputs: debounced events are routed by the
+ * channel's kind (light -> On/Off toggle, custom -> Generic Switch events). */
+void channel_router_on_switch_event(uint8_t index, const switch_event_t *event);
+
+/* Called from the esp-matter PRE_UPDATE callback (CHIP task) for On/Off writes. */
+void channel_router_on_matter_write(uint8_t index, bool on);
+
+/* True when the channel has a relay GPIO configured (system-status page). */
+bool channel_router_relay_enabled(uint8_t index);
+
+#ifdef __cplusplus
+}
+#endif

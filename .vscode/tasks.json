@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ESP-IDF: Build",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source '${workspaceFolder}/os/export_idf.sh' && idf.py build"
+            ],
+            "options": { "cwd": "${workspaceFolder}/os" },
+            "problemMatcher": "$gcc",
+            "group": { "kind": "build", "isDefault": true }
+        },
+        {
+            "label": "ESP-IDF: Set target (ESP32-S3)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source '${workspaceFolder}/os/export_idf.sh' && idf.py set-target esp32s3"
+            ],
+            "options": { "cwd": "${workspaceFolder}/os" },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "ESP-IDF: Menuconfig",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "source '${workspaceFolder}/os/export_idf.sh' && idf.py menuconfig"
+            ],
+            "options": { "cwd": "${workspaceFolder}/os" },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}

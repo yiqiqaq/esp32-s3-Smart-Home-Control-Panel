@@ -1,0 +1,65 @@
+menu "Home panel hardware"
+config PANEL_TEST_MODE_DEFAULT
+    bool "Start in safe test mode"
+    default y
+config PANEL_SWITCH_1_GPIO
+    int "Physical switch 1 GPIO"
+    range 0 48
+    default 4
+config PANEL_SWITCH_2_GPIO
+    int "Physical switch 2 GPIO"
+    range 0 48
+    default 5
+config PANEL_SWITCH_3_GPIO
+    int "Physical switch 3 GPIO"
+    range 0 48
+    default 6
+config PANEL_RELAY_1_GPIO
+    int "Isolated relay driver 1 GPIO (-1 disables)"
+    range -1 48
+    default -1
+config PANEL_RELAY_2_GPIO
+    int "Isolated relay driver 2 GPIO (-1 disables)"
+    range -1 48
+    default -1
+config PANEL_RELAY_3_GPIO
+    int "Isolated relay driver 3 GPIO (-1 disables)"
+    range -1 48
+    default -1
+choice PANEL_SWITCH_MODE
+    prompt "Physical switch contact type"
+    default PANEL_SWITCH_MODE_MOMENTARY
+    help
+      Momentary push buttons toggle on press; bistable rockers sync the light
+      to the contact position. GPIO0/3/45/46 are strapping pins on ESP32-S3
+      and must not be used here.
+config PANEL_SWITCH_MODE_MOMENTARY
+    bool "Momentary push buttons (press to toggle)"
+config PANEL_SWITCH_MODE_TOGGLE
+    bool "Bistable rockers (level sync)"
+endchoice
+config PANEL_DEBOUNCE_MS
+    int "Switch debounce time (ms)"
+    range 5 100
+    default 25
+config PANEL_LONGPRESS_MS
+    int "Long press threshold (ms)"
+    range 200 5000
+    default 550
+config PANEL_TIMEZONE
+    string "POSIX timezone string"
+    default "CST-8"
+config PANEL_NTP_SERVER
+    string "Primary NTP server"
+    default "ntp.aliyun.com"
+config PANEL_WEATHER_URL
+    string "Weather forecast URL (Open-Meteo compatible)"
+    default "https://api.open-meteo.com/v1/forecast?latitude=30.27&longitude=120.15&current=temperature_2m,relative_humidity_2m,weather_code&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1"
+config PANEL_WEATHER_CITY
+    string "Weather city label"
+    default "杭州"
+config PANEL_WEATHER_PERIOD_MIN
+    int "Weather refresh period (minutes)"
+    range 5 240
+    default 30
+endmenu
