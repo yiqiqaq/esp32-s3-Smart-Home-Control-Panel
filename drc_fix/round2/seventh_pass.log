@@ -1,0 +1,41 @@
+state: routes=104 vias=61
+GPA3     ok=True segs=1 vias=0 0.1s
+GPA4     ok=True segs=3 vias=2 0.5s
+GPA5     ok=True segs=1 vias=0 0.7s
+GPA6     ok=True segs=3 vias=2 0.6s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     ok=False segs=0 vias=0 4.4s
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     ok=False segs=0 vias=0 10.5s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     ok=False segs=6 vias=4 5.2s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     ok=False segs=2 vias=0 4.8s
+  FAIL DI2: pad4(1548.1,375.0) -> pad1
+DI2      ok=False segs=4 vias=2 5.3s
+  FAIL DI3: pad5(1520.6,1337.5) -> pad3
+  FAIL DI3: pad3(945.0,840.9) -> pad1
+DI3      ok=False segs=6 vias=4 9.7s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     ok=False segs=0 vias=0 9.2s
+  FAIL SDA: pad3(1613.1,2107.5) -> pad1
+SDA      ok=False segs=2 vias=0 4.3s
+  FAIL SCL: pad4(1534.4,2107.5) -> pad12
+SCL      ok=False segs=1 vias=0 4.9s
+$1N9     ok=True segs=1 vias=0 0.0s
+  FAIL DI_COM: pad1(1181.9,375.0) -> pad1
+  FAIL DI_COM: pad1(1646.9,375.0) -> pad1
+DI_COM   ok=False segs=2 vias=0 4.8s
+  FAIL +5V: pad1(1010.3,585.0) -> pad1
+  FAIL +5V: pad1(1220.4,1365.0) -> pad1
+  FAIL +5V: pad1(1220.4,1365.0) -> pad2
+  FAIL +5V: pad1(1270.3,585.0) -> pad1
+  FAIL +5V: pad1(650.0,-1236.9) -> pad1
++5V      ok=False segs=13 vias=1 9.8s
+  FAIL +3V3: pad2(1329.7,130.0) -> pad2
+  FAIL +3V3: pad2(1329.7,130.0) -> pad2
+  FAIL +3V3: pad1(1467.4,559.0) -> pad2
+  FAIL +3V3: pad1(1051.4,1495.0) -> pad9
++3V3     ok=False segs=8 vias=0 5.0s
+written routes8.json: 148 routes, 72 vias

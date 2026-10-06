@@ -1,0 +1,35 @@
+start: routes=136 vias=64
+  FAIL DI2: pad4(1548.1,375.0) -> pad1
+  FAIL DI2: pad2(895.0,840.9) -> pad4
+  FAIL DI2: pad4(1599.4,1337.5) -> pad2
+DI2      ok=False seg+=0 7.6s
+  FAIL DI3: pad5(1520.6,1337.5) -> pad3
+  FAIL DI3: pad3(945.0,840.9) -> pad1
+DI3      ok=False seg+=6 7.7s
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     ok=False seg+=0 8.0s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     ok=False seg+=6 4.1s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     ok=False seg+=2 4.2s
+  FAIL GPA3: pad4(1599.4,27.5) -> pad25
+GPA3     ok=False seg+=0 4.2s
+  FAIL GPA4: pad5(1520.6,27.5) -> pad24
+GPA4     ok=False seg+=0 4.0s
+  FAIL GPA5: pad6(1441.9,27.5) -> pad23
+GPA5     ok=False seg+=0 3.9s
+  FAIL GPA6: pad7(1363.1,27.5) -> pad22
+GPA6     ok=False seg+=0 3.9s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     ok=False seg+=0 3.9s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     ok=False seg+=0 7.6s
+  FAIL SDA: pad3(1613.1,2107.5) -> pad1
+SDA      ok=False seg+=2 4.0s
+  FAIL SCL: pad12(1395.0,840.9) -> pad1
+  FAIL SCL: pad4(1534.4,2107.5) -> pad12
+SCL      ok=False seg+=0 4.0s
+  FAIL GND padB1A12 (126.0,-1774.6)
+GND      ok=False seg+=39 0.0s
+written routes5.json: 144 routes, 68 vias

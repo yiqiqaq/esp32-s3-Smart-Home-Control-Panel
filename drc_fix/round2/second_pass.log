@@ -1,0 +1,44 @@
+start: routes=136 vias=64
+  FAIL GND padB1A12 (126.0,-1774.6)
+GND      ok=False newseg=39 newvia=37 40.4s
+  FAIL $1N9: pad1(1218.3,1846.0) -> pad1
+$1N9     ok=False newseg=0 newvia=0 3.8s
+  FAIL SDA: pad3(1613.1,2107.5) -> pad1
+SDA      ok=False newseg=1 newvia=0 3.9s
+  FAIL SCL: pad12(1395.0,840.9) -> pad1
+  FAIL SCL: pad4(1534.4,2107.5) -> pad12
+SCL      ok=False newseg=0 newvia=0 4.0s
+  FAIL DI_COM: pad1(1181.9,375.0) -> pad1
+  FAIL DI_COM: pad1(1646.9,375.0) -> pad1
+DI_COM   ok=False newseg=1 newvia=0 4.1s
+  FAIL DI2: pad4(1548.1,375.0) -> pad1
+  FAIL DI2: pad2(895.0,840.9) -> pad4
+  FAIL DI2: pad4(1599.4,1337.5) -> pad2
+DI2      ok=False newseg=0 newvia=0 7.8s
+  FAIL DI3: pad5(1520.6,1337.5) -> pad3
+  FAIL DI3: pad3(945.0,840.9) -> pad1
+DI3      ok=False newseg=3 newvia=2 7.9s
+  FAIL DIN1: pad1(1950.0,-1275.0) -> pad2
+DIN1     ok=False newseg=0 newvia=0 7.9s
+  FAIL DIN2: pad2(1950.0,-1075.0) -> pad2
+DIN2     ok=False newseg=0 newvia=0 7.8s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     ok=False newseg=0 newvia=0 7.6s
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     ok=False newseg=0 newvia=0 8.4s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     ok=False newseg=3 newvia=2 4.3s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     ok=False newseg=1 newvia=0 4.0s
+  FAIL GPA3: pad4(1599.4,27.5) -> pad25
+GPA3     ok=False newseg=0 newvia=0 4.0s
+  FAIL GPA4: pad5(1520.6,27.5) -> pad24
+GPA4     ok=False newseg=0 newvia=0 4.0s
+  FAIL GPA5: pad6(1441.9,27.5) -> pad23
+GPA5     ok=False newseg=0 newvia=0 4.0s
+  FAIL GPA6: pad7(1363.1,27.5) -> pad22
+GPA6     ok=False newseg=0 newvia=0 4.0s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     ok=False newseg=0 newvia=0 4.0s
+written routes3.json: 184 routes, 105 vias

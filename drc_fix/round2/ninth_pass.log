@@ -1,0 +1,19 @@
+state: routes=137 vias=75
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     ok=False segs=0 vias=0 10.7s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     ok=False segs=12 vias=8 5.2s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     ok=False segs=4 vias=0 5.0s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     ok=False segs=0 vias=0 5.2s
+DI3      ok=True segs=18 vias=12 0.5s
+DI_COM   ok=True segs=10 vias=4 0.2s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     ok=False segs=0 vias=0 9.3s
+  FAIL SDA: pad3(1613.1,2107.5) -> pad1
+SDA      ok=False segs=4 vias=0 5.1s
+  FAIL SCL: pad4(1534.4,2107.5) -> pad12
+SCL      ok=False segs=3 vias=0 5.1s
+written routes10.json: 159 routes, 87 vias

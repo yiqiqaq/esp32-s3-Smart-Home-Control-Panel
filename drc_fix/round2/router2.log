@@ -1,0 +1,67 @@
+pads=198 init=0.0s
+AC_L     pads= 2 seg=  1 via= 0 ok=True 0.0s
+AC_N     pads= 5 seg=  4 via= 0 ok=True 0.2s
+AC_L_M   pads= 2 seg=  1 via= 0 ok=True 0.2s
+AC_N_M   pads= 2 seg=  2 via= 1 ok=True 0.3s
+AC_L_F   pads= 7 seg=  6 via= 0 ok=True 0.2s
+OUT1     pads= 2 seg=  1 via= 0 ok=True 0.0s
+OUT2     pads= 2 seg=  1 via= 0 ok=True 0.1s
+OUT3     pads= 2 seg=  1 via= 0 ok=True 0.2s
++5V      pads=18 seg= 18 via= 1 ok=True 0.6s
++3V3     pads=13 seg= 14 via= 2 ok=True 1.0s
+VMAIN    pads= 2 seg=  1 via= 0 ok=True 0.2s
+VBUS     pads= 3 seg=  2 via= 0 ok=True 0.1s
+  FAIL GND padB1A12 (126.0,-1774.6)
+GND      pads=35 seg= 39 via=37 ok=False 42.3s
+  FAIL DI_COM: pad1(1181.9,375.0) -> pad1
+  FAIL DI_COM: pad1(1646.9,375.0) -> pad1
+DI_COM   pads= 4 seg=  1 via= 0 ok=False 4.3s
+  FAIL DIN1: pad1(1950.0,-1275.0) -> pad2
+DIN1     pads= 2 seg=  0 via= 0 ok=False 8.4s
+  FAIL DIN2: pad2(1950.0,-1075.0) -> pad2
+DIN2     pads= 2 seg=  0 via= 0 ok=False 8.2s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     pads= 2 seg=  0 via= 0 ok=False 8.1s
+DI1      pads= 4 seg=  5 via= 2 ok=True 0.4s
+  FAIL DI2: pad4(1548.1,375.0) -> pad1
+  FAIL DI2: pad2(895.0,840.9) -> pad4
+  FAIL DI2: pad4(1599.4,1337.5) -> pad2
+DI2      pads= 4 seg=  0 via= 0 ok=False 8.2s
+  FAIL DI3: pad5(1520.6,1337.5) -> pad3
+  FAIL DI3: pad3(945.0,840.9) -> pad1
+DI3      pads= 4 seg=  3 via= 2 ok=False 8.2s
+SW1      pads= 3 seg=  5 via= 3 ok=True 0.2s
+SW2      pads= 3 seg=  4 via= 2 ok=True 0.1s
+SW3      pads= 3 seg=  4 via= 2 ok=True 0.2s
+SWB1     pads= 3 seg=  4 via= 2 ok=True 0.1s
+SWB2     pads= 3 seg=  4 via= 2 ok=True 0.1s
+SWB3     pads= 3 seg=  4 via= 2 ok=True 0.1s
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     pads= 3 seg=  0 via= 0 ok=False 8.6s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     pads= 3 seg=  3 via= 2 ok=False 4.4s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     pads= 3 seg=  1 via= 0 ok=False 4.3s
+  FAIL GPA3: pad4(1599.4,27.5) -> pad25
+GPA3     pads= 2 seg=  0 via= 0 ok=False 4.0s
+  FAIL GPA4: pad5(1520.6,27.5) -> pad24
+GPA4     pads= 2 seg=  0 via= 0 ok=False 4.0s
+  FAIL GPA5: pad6(1441.9,27.5) -> pad23
+GPA5     pads= 2 seg=  0 via= 0 ok=False 4.0s
+  FAIL GPA6: pad7(1363.1,27.5) -> pad22
+GPA6     pads= 2 seg=  0 via= 0 ok=False 4.0s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     pads= 2 seg=  0 via= 0 ok=False 4.0s
+  FAIL SDA: pad3(1613.1,2107.5) -> pad1
+SDA      pads= 3 seg=  1 via= 0 ok=False 4.1s
+  FAIL SCL: pad12(1395.0,840.9) -> pad1
+  FAIL SCL: pad4(1534.4,2107.5) -> pad12
+SCL      pads= 3 seg=  0 via= 0 ok=False 4.1s
+CC1      pads= 2 seg=  3 via= 2 ok=True 0.1s
+CC2      pads= 2 seg=  3 via= 2 ok=True 0.1s
+  FAIL $1N9: pad1(1218.3,1846.0) -> pad1
+$1N9     pads= 2 seg=  0 via= 0 ok=False 4.0s
+INT      (extra) pads=1 ok=True
+total routes=136 vias=64 all_ok=False 141.9s
+written routes2.json

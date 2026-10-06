@@ -1,0 +1,54 @@
+state after power removal: routes=104 vias=61
+$1N9     ok=True 0.1s
+SDA      ok=True 0.3s
+SCL      ok=True 0.4s
+DI_COM   ok=True 0.2s
+  FAIL DI2: pad2(895.0,840.9) -> pad4
+  FAIL DI2: pad4(1599.4,1337.5) -> pad2
+DI2      ok=False 8.2s
+  FAIL DI3: pad5(1520.6,1337.5) -> pad3
+  FAIL DI3: pad3(945.0,840.9) -> pad1
+DI3      ok=False 8.0s
+DIN1     ok=True 0.8s
+DIN2     ok=True 2.0s
+  FAIL DIN3: pad3(1950.0,-875.0) -> pad2
+DIN3     ok=False 7.6s
+  FAIL RLY1: pad1(1835.6,27.5) -> pad28
+  FAIL RLY1: pad28(845.0,1239.1) -> pad1
+RLY1     ok=False 8.6s
+  FAIL RLY2: pad2(1756.8,27.5) -> pad27
+RLY2     ok=False 4.2s
+  FAIL RLY3: pad3(1678.1,27.5) -> pad26
+RLY3     ok=False 4.0s
+  FAIL GPA3: pad4(1599.4,27.5) -> pad25
+GPA3     ok=False 4.0s
+  FAIL GPA4: pad5(1520.6,27.5) -> pad24
+GPA4     ok=False 4.0s
+  FAIL GPA5: pad6(1441.9,27.5) -> pad23
+GPA5     ok=False 4.0s
+  FAIL GPA6: pad7(1363.1,27.5) -> pad22
+GPA6     ok=False 4.1s
+  FAIL GPA7: pad8(1284.4,27.5) -> pad21
+GPA7     ok=False 4.0s
+  FAIL +5V: pad1(1010.3,585.0) -> pad1
+  FAIL +5V: pad2(1277.7,1846.0) -> pad3
+  FAIL +5V: pad1(1270.3,585.0) -> pad1
+  FAIL +5V: pad1(1220.4,1365.0) -> pad1
+  FAIL +5V: pad1(1220.4,1365.0) -> pad2
+  FAIL +5V: pad1(1270.3,585.0) -> pad1
+  FAIL +5V: pad1(650.0,-1236.9) -> pad1
++5V      ok=False 12.1s
+  FAIL +3V3: pad2(1719.7,910.0) -> pad2
+  FAIL +3V3: pad2(961.9,1755.0) -> pad4
+  FAIL +3V3: pad14(1495.0,840.9) -> pad2
+  FAIL +3V3: pad9(1245.0,840.9) -> pad14
+  FAIL +3V3: pad1(1041.4,1755.0) -> pad1
+  FAIL +3V3: pad14(1495.0,840.9) -> pad1
+  FAIL +3V3: pad2(1329.7,130.0) -> pad2
+  FAIL +3V3: pad2(1719.7,910.0) -> pad1
+  FAIL +3V3: pad1(1467.4,559.0) -> pad2
+  FAIL +3V3: pad1(1051.4,1495.0) -> pad9
++3V3     ok=False 8.0s
+  FAIL GND padB1A12 (126.0,-1774.6)
+GND B1A12 stub ok= False
+written routes4.json: 141 routes, 72 vias
