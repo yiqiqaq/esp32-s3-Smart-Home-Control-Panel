@@ -682,9 +682,9 @@ void ui_home_apply(const app_snapshot_t *snap, bool matter_paired) {
             set_text(s_chan_name[i], ac->name);
             set_text(s_chan_kind[i], "空调控制");
             if (ac->on) {
-                snprintf(buf2, sizeof(buf2), "%s %d°",
+                snprintf(buf, sizeof(buf), "%s %d°",
                          ac->mode == AC_MODE_COOL ? "制冷" : "制热", ac->temp_now);
-                set_text(s_chan_state[i], buf2);
+                set_text(s_chan_state[i], buf);
             } else {
                 set_text(s_chan_state[i], "已关闭");
             }
