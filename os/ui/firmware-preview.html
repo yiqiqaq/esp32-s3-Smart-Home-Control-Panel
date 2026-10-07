@@ -8,9 +8,9 @@
      Pixel-faithful replica of the LVGL firmware UI (os/main/ui_*.cpp).
      Layout numbers, palettes and strings mirror the firmware 1:1;
      palettes come from theme_service.cpp. Interactions (theme switch,
-     channel toggle, scenes, overlay, settings) behave like the device.
-     URL hash: #warm / #mint / #light selects theme, #overlay opens the
-     scene library, #settings opens the settings page.
+     channel toggle, six inline scenes, binding picker, settings) behave
+     like the device. URL hash: #warm / #mint / #light selects theme,
+     #settings opens the settings page.
      ============================================================ */
   :root, [data-theme="cool"] {
     --bg:#11151c; --card:#202a37; --card2:#273444; --ink:#f4f6fa;
@@ -67,11 +67,9 @@
   .clock { font-size:30px; color:var(--ink); letter-spacing:1px; }
 
   /* ---- header (52px) ---- */
-  .header { height:52px; display:flex; align-items:center; column-gap:10px; flex:none; }
-  .header .titles { display:flex; flex-direction:column; row-gap:4px; }
+  .header { height:46px; display:flex; align-items:center; column-gap:10px; flex:none; }
   .title { font-size:18px; color:var(--ink); }
   .date { font-size:14px; color:var(--muted); }
-  .greeting { font-size:14px; color:var(--muted); }
 
   /* ---- main row (288px) ---- */
   .main { flex:1; display:flex; column-gap:12px; min-height:0; }
@@ -84,13 +82,12 @@
   .temp { font-size:30px; color:var(--ink); position:absolute; left:14px; top:14px; }
   .wicon { font-size:30px; color:var(--accent); position:absolute; right:18px; top:14px; }
   .wdesc { font-size:14px; color:var(--muted); position:absolute; left:14px; top:56px; }
-  .whum { position:absolute; left:14px; bottom:14px; color:var(--muted); }
-  .wupd { position:absolute; right:14px; bottom:34px; color:var(--muted); }
+.whum { position:absolute; left:14px; bottom:14px; color:var(--muted); }
   .wcity { position:absolute; right:14px; bottom:14px; color:var(--muted); }
-  .lights { height:50px; padding:8px 14px; display:flex; align-items:center; justify-content:space-between; }
-  .lights .cap { color:var(--muted); }
-  .lights .val { font-size:18px; color:var(--ink); }
-  .hourly { flex:1; padding:8px; }
+.lights { height:22px; padding:0 6px; display:flex; align-items:center; justify-content:space-between; flex:none; }
+  .lights .cap { color:var(--muted); font-size:14px; }
+  .lights .val { font-size:14px; color:var(--ink); }
+  .hourly { height:96px; padding:8px; flex:none; }
   .hcol {
     position:absolute; top:6px; width:64px; display:flex; flex-direction:column;
     align-items:center; row-gap:4px;
@@ -107,27 +104,27 @@
   .chcard.on { border-color:var(--accent); }
   .chname { font-size:18px; color:var(--ink); }
   .chkind { font-size:14px; color:var(--muted); margin-top:6px; }
-  .chstate { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--muted); }
-  .chcard.on .chstate { color:var(--accent); }
+.chpill {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    background:var(--card2); border-radius:15px; padding:6px 12px;
+    font-size:14px; color:var(--muted);
+  }
+  .chcard.on .chpill { color:var(--accent); }
 
   /* ---- scene bar (44px) ---- */
   .scenebar { height:44px; display:flex; column-gap:10px; flex:none; }
-  .schip {
-    height:44px; background:var(--card2); border-radius:14px; padding:0 14px;
-    display:flex; align-items:center; column-gap:8px; cursor:pointer; color:var(--ink);
+.schip {
+    flex:1; height:44px; background:var(--card2); border-radius:14px;
+    display:flex; align-items:center; justify-content:center; column-gap:8px;
+    cursor:pointer; color:var(--ink);
   }
   .schip:active { background:var(--press); }
-  .schip .ic { color:var(--accent); font-size:18px; }
+.schip .ic { color:var(--accent); font-size:18px; }
+  .schip .nm { font-size:18px; }
   .schip.more { color:var(--muted); }
   .schip.active { border:2px solid var(--accent); }
   .schip.active .nm { color:var(--accent); }
 
-  /* ---- scene overlay ---- */
-  #overlay {
-    position:absolute; inset:0; background:rgba(0,0,0,.6); display:none;
-    align-items:center; justify-content:center; z-index:10;
-  }
-  #overlay.open { display:flex; }
   .opanel {
     width:470px; height:404px; background:var(--card); border-radius:24px;
     padding:14px; display:flex; flex-direction:column; row-gap:10px;
@@ -169,6 +166,29 @@
   .srow .cap { color:var(--muted); }
   .srow .val { font-size:18px; color:var(--ink); }
   .sw { width:52px; height:28px; border-radius:14px; background:var(--card2); position:relative; cursor:pointer; }
+  .sw.bbtn::after { content:none; } /* legacy guard */
+  .bchip {
+    height:36px; padding:0 14px; border-radius:12px; background:var(--card2);
+    display:flex; align-items:center; font-size:14px; color:var(--ink); cursor:pointer;
+  }
+  .bchip:active { background:var(--press); }
+  #bpick {
+    position:absolute; inset:0; background:rgba(0,0,0,.6); display:none;
+    align-items:center; justify-content:center; z-index:20;
+  }
+  #bpick.open { display:flex; }
+  .phint { color:var(--muted); padding-left:6px; }
+  .prow {
+    height:48px; background:var(--card2); border-radius:14px; position:relative; cursor:pointer;
+  }
+  .prow:active { background:var(--press); }
+  .prow .nm { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--ink); }
+  .prow .ds { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); }
+  .phead { height:30px; display:flex; align-items:center; column-gap:10px; }
+  .pback {
+    height:28px; padding:0 10px; border-radius:10px; background:var(--card2);
+    display:flex; align-items:center; font-size:14px; color:var(--ink); cursor:pointer;
+  }
   .sw::after {
     content:''; position:absolute; top:3px; left:3px; width:22px; height:22px;
     border-radius:11px; background:var(--muted); transition:left .15s;
@@ -185,32 +205,28 @@
       <div class="chip"><div class="dot" id="mdot"></div><span id="mlbl">未配网</span></div>
       <div class="chip">测试模式</div>
       <div class="spacer"></div>
+      <div class="gear" id="micbtn" title="语音助手">🎙️</div>
       <div class="gear" id="gear">⚙</div>
       <div class="clock">19:05</div>
     </div>
 
     <div class="header">
-      <div class="titles">
-        <div class="title">栖居</div>
-        <div class="date">10月7日 周三</div>
-      </div>
+      <div class="title">栖居</div>
       <div class="spacer"></div>
-      <div class="greeting">晚上好，欢迎回家</div>
+      <div class="date">10月7日 周三 · 晚上好，欢迎回家</div>
     </div>
 
     <div class="main">
       <div class="col-left">
         <div class="card weather">
-          <div class="temp">24°</div>
-          <div class="wicon">☀&#xFE0E;</div>
+          <div class="wtop"><span class="temp">24°</span><span class="wicon">☀&#xFE0E;</span></div>
           <div class="wdesc">晴 · 体感舒适</div>
-          <div class="whum">湿度 42%</div>
-          <div class="wupd">--:--</div>
-          <div class="wcity">杭州</div>
+          <div class="wgrow"></div>
+          <div class="wbot"><span class="whum">湿度 42%</span><span class="wcity">杭州</span></div>
         </div>
-        <div class="card lights">
+        <div class="lights">
           <span class="cap">全屋灯具</span>
-          <span class="val" id="lightcount">1 / 2</span>
+          <span class="val" id="lightcount">0 / 2</span>
         </div>
         <div class="card hourly" id="hourly">
           <div class="hcol" style="left:26px"><div class="ht">19时</div><div class="hi">☀&#xFE0E;</div><div class="hp">24°</div></div>
@@ -221,23 +237,32 @@
       </div>
       <div class="col-right" id="channels">
         <div class="chcard" data-i="0">
-          <div class="chname">客厅主灯</div>
-          <div class="chkind">灯具控制</div>
-          <div class="chstate">已关闭</div>
+          <div class="chname">客厅开关</div>
+          <div class="chkind">灯光开关 · 客厅主灯</div>
+          <div class="chpill">已关闭</div>
         </div>
         <div class="chcard" data-i="1">
-          <div class="chname">餐厅吊灯</div>
-          <div class="chkind">灯具控制</div>
-          <div class="chstate">已关闭</div>
+          <div class="chname">餐厅开关</div>
+          <div class="chkind">灯光开关 · 餐厅吊灯</div>
+          <div class="chpill">已关闭</div>
         </div>
         <div class="chcard" data-i="2">
           <div class="chname">自定义联动</div>
           <div class="chkind">自定义开关</div>
-          <div class="chstate">待触发</div>
+          <div class="chpill">待触发</div>
         </div>
       </div>
     </div>
 
+    <div class="card" id="mediabar" style="height:52px;padding:8px 14px;display:none;align-items:center;flex:none;">
+      <span id="mtitle" style="font-size:14px;color:var(--ink);max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">音乐</span>
+      <div style="display:flex;gap:10px;margin-left:auto;align-items:center;">
+        <div class="gear" style="width:36px;height:36px;" id="mprev">⏮</div>
+        <div class="gear" style="width:36px;height:36px;" id="mplay">▶</div>
+        <div class="gear" style="width:36px;height:36px;" id="mnext">⏭</div>
+        <input type="range" id="mvol" min="0" max="100" value="70" style="width:90px;accent-color:var(--accent);">
+      </div>
+    </div>
     <div class="scenebar" id="scenebar"></div>
   </div>
 
@@ -249,6 +274,11 @@
     </div>
     <div class="scap">主题库</div>
     <div class="themebtns" id="themes"></div>
+    <div class="scap">通道绑定</div>
+    <div class="srow"><span class="cap" id="bc0"></span><div class="bchip" data-ch="0" id="bl0"></div></div>
+    <div class="srow"><span class="cap" id="bc1"></span><div class="bchip" data-ch="1" id="bl1"></div></div>
+    <div class="srow"><span class="cap" id="bc2"></span><div class="bchip" data-ch="2" id="bl2"></div></div>
+
     <div class="scap">面板</div>
     <div class="srow"><span class="cap">面板名称</span><span class="val">栖居</span></div>
     <div class="srow"><span class="cap">天气城市</span><span class="val">杭州</span></div>
@@ -259,26 +289,74 @@
     <div class="srow"><span class="cap">测试模式（输出保持断开）</span><div class="sw on" id="testsw"></div></div>
   </div>
 
-  <!-- ================= SCENE OVERLAY ================= -->
-  <div id="overlay">
-    <div class="opanel" id="opanel">
-      <div class="head"><span class="ot">快捷场景</span><span class="oh">轻点执行 · 长按固定到首页</span></div>
+  <!-- ================= AC CONTROL PANEL ================= -->
+  <div id="acp" style="position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:25;">
+    <div class="opanel" id="acpanel" style="width:420px;height:336px;row-gap:10px;">
+      <div class="head"><span class="ot" id="acname">客厅空调</span>
+        <label style="margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px;">开关
+          <div class="sw" id="acsw"></div></label>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="tchip" id="accool" style="height:40px">制冷</div>
+        <div class="tchip" id="acheat" style="height:40px">制热</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;height:56px;flex:none;">
+        <div class="bchip" id="acdown" style="width:56px;height:44px;justify-content:center;font-size:22px;">−</div>
+        <div id="actemp" style="font-size:30px;color:var(--ink);">26°</div>
+        <div class="bchip" id="acup" style="width:56px;height:44px;justify-content:center;font-size:22px;">+</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px;height:44px;flex:none;">
+        <div class="bchip fanb" data-f="0" style="flex:1;justify-content:center;">自动风</div>
+        <div class="bchip fanb" data-f="1" style="flex:1;justify-content:center;">低风</div>
+        <div class="bchip fanb" data-f="2" style="flex:1;justify-content:center;">中风</div>
+        <div class="bchip fanb" data-f="3" style="flex:1;justify-content:center;">高风</div>
+      </div>
     </div>
   </div>
+
+  <!-- ================= VOICE ASSISTANT (XiaoAI style) ================= -->
+  <div id="voice" style="position:absolute;inset:0;background:linear-gradient(180deg,#0e1118 0%,#0b0d12 60%,#101722 100%);display:none;flex-direction:column;align-items:center;z-index:30;">
+    <div style="align-self:flex-end;margin:16px;" class="gear" id="vclose">✕</div>
+    <div id="vstatus" style="color:var(--muted);font-size:18px;margin-top:2px;">在听</div>
+    <div id="vreply" style="color:var(--ink);font-size:18px;text-align:center;padding:24px 60px;line-height:1.6;"></div>
+    <div id="vorb" style="margin-top:auto;margin-bottom:34px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#92c2ff 0%,#5d9dff88 45%,transparent 70%);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+      <div style="width:70px;height:70px;border-radius:50%;background:#92c2ffcc;"></div>
+    </div>
+  </div>
+  <style>
+    @keyframes vbreathe { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.28);opacity:1} }
+    #voice.listening #vorb { animation: vbreathe 1.4s ease-in-out infinite; }
+    #voice.listening #vorb > div { animation: vbreathe 1.4s ease-in-out infinite; }
+  </style>
+
+  <!-- ================= BINDING PICKER (2-level) ================= -->
+  <div id="bpick">
+    <div class="opanel" id="bpanel" style="height:430px">
+      <div class="head"><span class="ot">通道绑定</span><span class="oh" id="bch"></span></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="hint">
   ↑ 固件触摸 UI 的 1:1 复刻（LVGL 布局/调色板/文案与 os/main/ui_*.cpp 一致）。可交互：点通道卡开关灯具、
-  点场景执行、齿轮进设置、主题芯片切换配色。默认状态 = 烧录后的初始状态（清透蓝 · 测试模式开 · 未配网 · 演示天气）。
+  点场景执行、齿轮进设置、主题芯片切换配色；点麦克风模拟语音播放，或直接打开<a id="musicPreviewLink" href="#music">音乐控制预览</a>。
+  默认状态 = 烧录后的初始状态（清透蓝 · 测试模式开 · 未配网 · 演示天气）。
   开源原型 <a href="panel-preview.html">panel-preview.html</a> / <a href="settings.html">settings.html</a> 是更完整的设计稿（含编辑面板名、模拟天气等）。
 </div>
 
 <script>
 /* ---- state, mirrors app_snapshot_t defaults ---- */
+const ROOMS = ['客厅','餐厅','卧室','走廊','阳台'];
+const lights = [ { name:'客厅主灯', on:false, room:0 }, { name:'餐厅吊灯', on:false, room:1 } ];
+const acs = [
+  { name:'客厅空调', room:0, on:false, mode:'cool', fan:0, temp:26, now:27 },
+  { name:'卧室空调', room:3, on:false, mode:'cool', fan:0, temp:26, now:27 },
+];
 const channels = [
-  { name:'客厅主灯', kind:'light', on:false },
-  { name:'餐厅吊灯', kind:'light', on:false },
-  { name:'自定义联动', kind:'custom', triggered:false },
+  { name:'客厅开关', bind:0 },                        /* bind: light idx / 100+ac idx / -1 manual */
+  { name:'餐厅开关', bind:1 },
+  { name:'自定义联动', bind:-1, triggered:false, action:null },
 ];
 const SCENES = [
   { id:0, ic:'⌂', nm:'回家', ds:'开启客厅、餐厅和走廊灯', t:[true,true]  },
@@ -286,6 +364,7 @@ const SCENES = [
   { id:2, ic:'↗', nm:'离家', ds:'关闭所有灯具',           t:[false,false] },
   { id:3, ic:'▣', nm:'观影', ds:'只开启客厅主灯',         t:[true,false]  },
   { id:4, ic:'▤', nm:'阅读', ds:'只开启卧室主灯',         t:[false,true]  },
+  { id:5, ic:'★', nm:'夜灯', ds:'卧室夜灯和走廊灯',       t:[false,false] },
 ];
 let pinned = [0,1,2], activeScene = null, testMode = true;
 
@@ -293,60 +372,186 @@ const $ = s => document.querySelector(s);
 const frame = $('#frame');
 
 function lightsCount() {
-  return channels.filter(c => c.kind==='light' && c.on).length + ' / ' +
-         channels.filter(c => c.kind==='light').length;
+  return lights.filter(l => l.on).length + ' / ' + lights.length;
 }
 function renderChannels() {
   document.querySelectorAll('.chcard').forEach(el => {
-    const c = channels[+el.dataset.i], st = el.querySelector('.chstate');
-    if (c.kind==='light') { st.textContent = c.on ? '已开启' : '已关闭'; el.classList.toggle('on', c.on); }
-    else { st.textContent = c.triggered ? '已触发' : '待触发'; el.classList.toggle('on', c.triggered); }
+    const c = channels[+el.dataset.i], title = el.querySelector('.chname');
+    const st = el.querySelector('.chpill'), kd = el.querySelector('.chkind');
+    if (c.bind >= 100) {
+      const a = acs[c.bind - 100];
+      title.textContent = a.name;
+      kd.textContent = '空调控制';
+      st.textContent = a.on ? (a.mode === 'cool' ? '制冷 ' : '制热 ') + a.now + '°' : '已关闭';
+      el.classList.toggle('on', a.on);
+    } else if (c.bind >= 0) {
+      title.textContent = lights[c.bind].name;
+      kd.textContent = '灯光开关';
+      st.textContent = lights[c.bind].on ? '已开启' : '已关闭';
+      el.classList.toggle('on', lights[c.bind].on);
+    } else if (c.action != null) {
+      title.textContent = c.name;
+      kd.textContent = '场景键 · ' + SCENES[c.action].nm;
+      st.textContent = c.triggered ? '已触发' : '待触发';
+      el.classList.toggle('on', c.triggered);
+    } else {
+      title.textContent = c.name;
+      kd.textContent = '自定义开关';
+      st.textContent = c.triggered ? '已触发' : '待触发';
+      el.classList.toggle('on', c.triggered);
+    }
   });
   $('#lightcount').textContent = lightsCount();
 }
+function renderBindings() {
+  channels.forEach((c, i) => {
+    document.getElementById('bc' + i).textContent = c.name;
+    const bindingName = c.bind >= 100 ? acs[c.bind - 100].name
+      : c.bind >= 0 ? lights[c.bind].name
+      : c.action != null ? '手动 · ' + SCENES[c.action].nm : '手动控制';
+    document.getElementById('bl' + i).textContent = bindingName;
+  });
+}
 function renderSceneBar() {
   const bar = $('#scenebar'); bar.innerHTML = '';
-  pinned.forEach(id => {
-    const s = SCENES[id];
+  SCENES.forEach(s => {
     const el = document.createElement('div');
-    el.className = 'schip' + (activeScene===id ? ' active' : '');
+    el.className = 'schip' + (activeScene===s.id ? ' active' : '');
     el.innerHTML = `<span class="ic">${s.ic}</span><span class="nm">${s.nm}</span>`;
-    el.onclick = () => runScene(id);
+    el.onclick = () => runScene(s.id);
     bar.appendChild(el);
   });
-  const more = document.createElement('div');
-  more.className = 'schip more'; more.textContent = '更多场景';
-  more.onclick = () => $('#overlay').classList.add('open');
-  bar.appendChild(more);
 }
 function runScene(id) {
   const s = SCENES[id];
-  channels[0].on = s.t[0]; channels[1].on = s.t[1];
+  lights[0].on = s.t[0]; lights[1].on = s.t[1];
   activeScene = id;
-  renderChannels(); renderSceneBar(); renderOverlay();
-  $('#overlay').classList.remove('open');
-}
-function renderOverlay() {
-  const p = $('#opanel');
-  p.querySelectorAll('.orow').forEach(e => e.remove());
-  SCENES.forEach(s => {
-    const el = document.createElement('div');
-    el.className = 'orow' + (activeScene===s.id ? ' active' : '');
-    el.innerHTML = `<span class="ic">${s.ic}</span><span class="nm">${s.nm}</span><span class="ds">${s.ds}</span>`;
-    el.onclick = () => runScene(s.id);
-    p.appendChild(el);
-  });
+  renderChannels(); renderSceneBar(); renderBindings();
 }
 document.querySelectorAll('.chcard').forEach(el => {
   el.addEventListener('click', () => {
     const c = channels[+el.dataset.i];
-    if (c.kind==='light') c.on = !c.on; else c.triggered = !c.triggered;
+    if (c.bind >= 100) { acpOpen(acs[c.bind - 100]); }        /* AC control panel */
+    else if (c.bind >= 0) { lights[c.bind].on = !lights[c.bind].on; } /* wall switch */
+    else if (c.action != null) { runScene(c.action); return; }
+    else c.triggered = !c.triggered;
     renderChannels();
   });
 });
+/* light toggle pulse animation */
+const style = document.createElement('style');
+style.textContent = '@keyframes chpulse { 0%{transform:scale(1)} 40%{transform:scale(1.02)} 100%{transform:scale(1)} } .chcard.pulse { animation: chpulse .32s ease; }';
+document.head.appendChild(style);
+const prevActive = [false, false, false];
+const seenCard = [false, false, false];
+const _rc = renderChannels;
+renderChannels = function () {
+  _rc();
+  document.querySelectorAll('.chcard').forEach(el => {
+    const c = channels[+el.dataset.i];
+    const active = c.bind >= 100 ? acs[c.bind - 100].on : (c.bind >= 0 ? lights[c.bind].on : !!c.triggered);
+    if (seenCard[+el.dataset.i] && active !== prevActive[+el.dataset.i]) {
+      el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+    }
+    prevActive[+el.dataset.i] = active;
+    seenCard[+el.dataset.i] = true;
+  });
+};
+/* binding picker: level 1 = rooms, level 2 = devices of the room */
+let pickCh = 0, pickLevel = 1, pickRoom = 0;
+function renderPicker() {
+  const p = document.getElementById('bpanel');
+  p.querySelectorAll('.phint,.prow,.phead').forEach(e => e.remove());
+  document.getElementById('bch').textContent = channels[pickCh].name;
+  if (pickLevel === 1) {
+    const hint = document.createElement('div');
+    hint.className = 'phint'; hint.textContent = '选择房间';
+    p.appendChild(hint);
+    const m = document.createElement('div');
+    m.className = 'prow';
+    m.innerHTML = '<span class="nm">手动控制</span><span class="ds">自定义手动控制</span>';
+    m.onclick = () => { pickLevel = 3; renderPicker(); };
+    p.appendChild(m);
+    ROOMS.forEach((rm, ri) => {
+      const cnt = lights.filter(l => l.room === ri).length + acs.filter(a => a.room === ri).length;
+      const el = document.createElement('div');
+      el.className = 'prow';
+      el.innerHTML = `<span class="nm">${rm}</span><span class="ds">${cnt ? cnt + ' 台设备' : '暂无设备'}</span>`;
+      el.onclick = () => { pickRoom = ri; pickLevel = 2; renderPicker(); };
+      p.appendChild(el);
+    });
+  } else if (pickLevel === 3) {
+    const head = document.createElement('div');
+    head.className = 'phead';
+    const back = document.createElement('div');
+    back.className = 'pback'; back.textContent = '← 房间';
+    back.onclick = () => { pickLevel = 1; renderPicker(); };
+    const t = document.createElement('span');
+    t.style.cssText = 'font-size:18px;color:var(--ink)';
+    t.textContent = '手动控制';
+    head.appendChild(back); head.appendChild(t);
+    p.appendChild(head);
+    const plain = document.createElement('div');
+    plain.className = 'prow';
+    plain.innerHTML = '<span class="nm">按键事件</span><span class="ds">上报开关事件</span>';
+    plain.onclick = () => { channels[pickCh].bind = -1; channels[pickCh].action = null; closePick(); };
+    p.appendChild(plain);
+    SCENES.forEach(sc => {
+      const el = document.createElement('div');
+      el.className = 'prow';
+      el.innerHTML = `<span class="nm">${sc.ic} ${sc.nm}</span><span class="ds">${sc.ds}</span>`;
+      el.onclick = () => { channels[pickCh].bind = -1; channels[pickCh].action = sc.id; closePick(); };
+      p.appendChild(el);
+    });
+  } else {
+    const head = document.createElement('div');
+    head.className = 'phead';
+    const back = document.createElement('div');
+    back.className = 'pback'; back.textContent = '← 房间';
+    back.onclick = () => { pickLevel = 1; renderPicker(); };
+    const rm = document.createElement('span');
+    rm.style.cssText = 'font-size:18px;color:var(--ink)';
+    rm.textContent = ROOMS[pickRoom];
+    head.appendChild(back); head.appendChild(rm);
+    p.appendChild(head);
+    const devs = lights.filter(l => l.room === pickRoom).map(l => ({ kind:'light', dev:l }));
+    acs.filter(a => a.room === pickRoom).forEach(a => devs.push({ kind:'ac', dev:a }));
+    if (!devs.length) {
+      const hint = document.createElement('div');
+      hint.className = 'phint'; hint.textContent = '暂无设备';
+      p.appendChild(hint);
+    }
+    devs.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'prow';
+      const ds = d.kind === 'light'
+        ? (d.dev.on ? '灯 · 已开启' : '灯 · 已关闭')
+        : `空调 · ${d.dev.now}°`;
+      el.innerHTML = `<span class="nm">${d.dev.name}</span><span class="ds">${ds}</span>`;
+      el.onclick = () => {
+        channels[pickCh].bind = d.kind === 'light' ? lights.indexOf(d.dev) : 100 + acs.indexOf(d.dev);
+        closePick();
+      };
+      p.appendChild(el);
+    });
+  }
+}
+function closePick() {
+  renderBindings(); renderChannels();
+  document.getElementById('bpick').classList.remove('open');
+}
+document.querySelectorAll('.bchip').forEach(el => {
+  el.addEventListener('click', () => {
+    pickCh = +el.dataset.ch; pickLevel = 1;
+    renderPicker();
+    document.getElementById('bpick').classList.add('open');
+  });
+});
+document.getElementById('bpick').addEventListener('click', e => {
+  if (e.target.id === 'bpick') document.getElementById('bpick').classList.remove('open');
+});
 $('#gear').onclick = () => { $('#scr-home').style.display='none'; $('#scr-settings').style.display='flex'; };
 $('#back').onclick = () => { $('#scr-settings').style.display='none'; $('#scr-home').style.display='flex'; };
-$('#overlay').onclick = e => { if (e.target.id==='overlay') $('#overlay').classList.remove('open'); };
 
 /* theme chips */
 const THEMES = ['清透蓝','暖阳','薄荷','浅色'];
@@ -371,17 +576,102 @@ $('#testsw').onclick = () => {
   $('#mlbl').parentElement.style.display = testMode ? '' : 'none';
 };
 
-renderChannels(); renderSceneBar(); renderOverlay(); renderThemes();
+renderBindings();
+
+/* AC control panel */
+let acpTarget = null;
+const FAN_NAMES = ['自动风','低风','中风','高风'];
+function acpOpen(a) {
+  acpTarget = a;
+  document.getElementById('acname').textContent = a.name;
+  renderAcp();
+  document.getElementById('acp').style.display = 'flex';
+}
+function renderAcp() {
+  const a = acpTarget; if (!a) return;
+  document.getElementById('acsw').classList.toggle('on', a.on);
+  document.getElementById('accool').style.borderColor = a.mode === 'cool' ? 'var(--accent)' : 'transparent';
+  document.getElementById('acheat').style.borderColor = a.mode === 'heat' ? 'var(--accent)' : 'transparent';
+  document.getElementById('actemp').textContent = a.temp + '°';
+  document.querySelectorAll('.fanb').forEach(el => {
+    el.style.borderColor = acs.indexOf(a) >= 0 && +el.dataset.f === a.fan ? 'var(--accent)' : 'transparent';
+  });
+  renderChannels();
+}
+document.getElementById('acsw').onclick = () => { acpTarget.on = !acpTarget.on; renderAcp(); };
+document.getElementById('accool').onclick = () => { acpTarget.mode = 'cool'; renderAcp(); };
+document.getElementById('acheat').onclick = () => { acpTarget.mode = 'heat'; renderAcp(); };
+document.getElementById('acdown').onclick = () => { acpTarget.temp = Math.max(16, acpTarget.temp - 1); renderAcp(); };
+document.getElementById('acup').onclick = () => { acpTarget.temp = Math.min(30, acpTarget.temp + 1); renderAcp(); };
+document.querySelectorAll('.fanb').forEach(el => {
+  el.onclick = () => { acpTarget.fan = +el.dataset.f; renderAcp(); };
+});
+document.getElementById('acp').addEventListener('click', e => {
+  if (e.target.id === 'acp') document.getElementById('acp').style.display = 'none';
+});
+
+/* voice assistant overlay demo flow */
+let vTimer = null;
+function voiceOpen() {
+  const v = document.getElementById('voice');
+  v.style.display = 'flex'; v.classList.add('listening');
+  document.getElementById('vstatus').textContent = '在听';
+  document.getElementById('vreply').textContent = '';
+  vTimer = setTimeout(() => {
+    v.classList.remove('listening');
+    document.getElementById('vstatus').textContent = '思考中';
+    vTimer = setTimeout(() => {
+      document.getElementById('vstatus').textContent = '正在回答';
+      document.getElementById('vreply').textContent = '好的，已为你打开客厅主灯';
+      lights[0].on = true; renderChannels();
+      document.getElementById('mediabar').style.display = 'flex';
+      document.getElementById('mtitle').textContent = '示例歌曲 · 来自语音助手';
+    }, 1200);
+  }, 1800);
+}
+document.getElementById('micbtn').onclick = voiceOpen;
+document.getElementById('vorb').onclick = voiceOpen;
+document.getElementById('vclose').onclick = () => {
+  clearTimeout(vTimer);
+  document.getElementById('voice').style.display = 'none';
+};
+document.getElementById('mplay').onclick = function () {
+  this.textContent = this.textContent === '▶' ? '⏸' : '▶';
+};
+document.getElementById('mprev').onclick = () => {};
+document.getElementById('mnext').onclick = () => {};
+document.getElementById('mvol').oninput = function () {};
+function showMusicPreview() {
+  document.getElementById('mediabar').style.display = 'flex';
+  document.getElementById('mtitle').textContent = '示例歌曲 · 来自语音助手';
+}
+document.getElementById('musicPreviewLink').onclick = event => {
+  event.preventDefault();
+  showMusicPreview();
+  if (location.hash !== '#music') history.replaceState(null, '', '#music');
+};
+window.addEventListener('hashchange', () => {
+  if (location.hash.includes('music')) showMusicPreview();
+});
 
 /* URL hash presets for screenshots */
 const h = location.hash;
+if (h.includes('acb')) {
+  /* pre-bind before first paint */
+  channels[0].bind = 100;
+  channels[2].bind = 100; /* 自定义联动 -> 客厅空调 */
+}
+renderChannels(); renderSceneBar(); renderThemes();
 if (h.includes('warm')) frame.dataset.theme='warm';
 if (h.includes('mint')) frame.dataset.theme='mint';
 if (h.includes('light')) frame.dataset.theme='light';
 if (h.includes('night')) { frame.dataset.theme='cool'; frame.dataset.day='night'; }
 if (h.includes('scene1')) { runScene(0); }
 if (h.includes('settings')) { $('#gear').click(); }
-if (h.includes('overlay')) { $('#overlay').classList.add('open'); }
+if (h.includes('voice')) { setTimeout(voiceOpen, 100); }
+if (h.includes('acpnl')) { setTimeout(() => acpOpen(acs[0]), 150); }
+if (h.includes('acb')) { channels[0].bind = 100; channels[2].bind = 100; }
+if (h.includes('music')) showMusicPreview();
 </script>
 </body>
 </html>

@@ -17,7 +17,13 @@ idf.py build
 
 这是一个 ESP-IDF + ESP-Matter 固件工程骨架：Matter over Wi-Fi 节点当前包含 2 个标准 On/Off Light endpoint 和 1 个 Generic Switch endpoint；3 个低压实体按钮映射到这 3 个 endpoint；可选 GPIO 用于驱动外部隔离继电器模块。代码不会直接驱动灯具市电。
 
-面板视觉稿在 [`ui/panel-preview.html`](ui/panel-preview.html)，按你确认的 800×480（5:3）原生画布比例重排，可用桌面浏览器打开交互预览。当前稿展示可自定义名称、三路控制卡、天气/时间氛围、四款主题、未来数小时逐小时天气、场景快捷入口和天气设置；天气状态为演示数据，面板名称只保存在预览浏览器本地。这是设计原型，不是已接入真实天气 API 或烧录在设备上的 LCD UI。视觉与交互规范见 [`UI_DESIGN.md`](UI_DESIGN.md)。Matter 提供温湿度等设备测量集群，但不负责城市天气或天气预报；真实天气需由设备单独连接天气数据源。
+面板视觉稿在 [`ui/panel-preview.html`](ui/panel-preview.html)；与当前固件触摸界面同步的交互预览在 [`ui/firmware-preview.html`](ui/firmware-preview.html)，均按 800×480（5:3）比例，可用桌面浏览器打开。固件预览包含通道绑定、空调控制、语音助手和音乐播放控制栏；点击页面说明中的“音乐控制预览”可直接查看音乐栏。预览数据仅用于交互演示，不连接真实设备或天气 API。视觉与交互说明及截图见 [`UI_DESIGN.md`](UI_DESIGN.md)。Matter 提供温湿度等设备测量集群，但不负责城市天气或天气预报；真实天气需由设备单独连接天气数据源。
+
+![固件 UI 首页预览](ui/preview/firmware_home.png)
+
+音乐控制栏在播放期间显示：
+
+![固件 UI 音乐控制栏预览](ui/preview/firmware_home_music.png)
 
 设置模式 UI 位于 [`ui/settings.html`](ui/settings.html)，服务接口契约见 [`SERVICE_API.md`](SERVICE_API.md)。固件侧 `panel_services` 已提供天气、全屋灯具、场景 provider API 和 NVS 测试模式接口；HTTP server/routes 和真实 provider 仍待接入。测试模式默认开启，跳过继电器输出，适合安全验证。
 
