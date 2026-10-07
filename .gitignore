@@ -3,6 +3,7 @@
 **/.DS_Store
 
 # dependencies / build artifacts
+node_modules
 node_modules/
 
 # generated inspection dump (build_hardware_xlsx.mjs debug output)
