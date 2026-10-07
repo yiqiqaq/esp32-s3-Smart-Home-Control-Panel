@@ -10,6 +10,7 @@
 #include "weather_service.h"
 #include "scene_engine.h"
 #include "service_providers.h"
+#include "ui_app.h"
 #include "sdkconfig.h"
 #include <esp_matter.h>
 
@@ -23,9 +24,10 @@ static constexpr int8_t kRelayGpios[3] = {
 };
 
 /* Boot order: storage -> service interface (loads test mode) -> state model ->
- * outputs -> time/weather services -> Matter data model -> providers -> inputs
- * -> Matter start. The input task starts after the endpoints exist so a press
- * can never route to an endpoint that is not there yet. */
+ * outputs -> time/weather services -> Matter data model -> providers -> touch
+ * UI -> Matter start. Physical switch inputs compile in but stay disabled
+ * unless PANEL_ENABLE_SWITCH_INPUTS is set; channel commands come from the
+ * touch UI, scenes and Matter writes through the same router. */
 extern "C" void app_main() {
     ESP_ERROR_CHECK(app_nvs_init());
     ESP_ERROR_CHECK(panel_services_init());
@@ -35,8 +37,12 @@ extern "C" void app_main() {
     ESP_ERROR_CHECK(weather_service_init());
     ESP_ERROR_CHECK(matter_nodes_init());
     ESP_ERROR_CHECK(service_providers_register());
-    ESP_ERROR_CHECK(switch_inputs_init(channel_router_on_switch_event, kSwitchGpios));
+    ESP_ERROR_CHECK(ui_app_init());
     ESP_ERROR_CHECK(esp_matter::start(nullptr));
+    matter_nodes_stack_started();
+#if CONFIG_PANEL_ENABLE_SWITCH_INPUTS
+    ESP_ERROR_CHECK(switch_inputs_init(channel_router_on_switch_event, kSwitchGpios));
+#endif
     ESP_LOGI(TAG, "3-channel Matter panel started (2 lights + generic switch), test mode %s",
              panel_services_test_mode() ? "on (outputs suppressed)" : "off");
 }

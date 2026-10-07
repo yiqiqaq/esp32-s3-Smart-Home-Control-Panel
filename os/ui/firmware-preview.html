@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>固件 UI 预览 — ESP32-S3-Touch-LCD-4.3B (800×480)</title>
+<style>
+  /* ============================================================
+     Pixel-faithful replica of the LVGL firmware UI (os/main/ui_*.cpp).
+     Layout numbers, palettes and strings mirror the firmware 1:1;
+     palettes come from theme_service.cpp. Interactions (theme switch,
+     channel toggle, scenes, overlay, settings) behave like the device.
+     URL hash: #warm / #mint / #light selects theme, #overlay opens the
+     scene library, #settings opens the settings page.
+     ============================================================ */
+  :root, [data-theme="cool"] {
+    --bg:#11151c; --card:#202a37; --card2:#273444; --ink:#f4f6fa;
+    --muted:#a9b4c2; --accent:#92c2ff; --online:#6ad9b3; --press:#2e3440;
+  }
+  [data-theme="warm"] {
+    --bg:#11151c; --card:#332b27; --card2:#41352e; --ink:#f4f6fa;
+    --muted:#a9b4c2; --accent:#ffc18b;
+  }
+  [data-theme="mint"] {
+    --bg:#11151c; --card:#1c302c; --card2:#254039; --ink:#f4f6fa;
+    --muted:#a9b4c2; --accent:#9ee6c8;
+  }
+  [data-theme="light"] {
+    --bg:#dce5ef; --card:#f4f7fb; --card2:#e9eff6; --ink:#1b2533;
+    --muted:#647387; --accent:#203b58;
+  }
+  [data-theme="cool"][data-day="night"] {
+    --bg:#0d1320; --card:#192235; --card2:#202c41; --accent:#b3c9ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#08090c; display:flex; flex-direction:column; align-items:center;
+    gap:14px; padding:24px; font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+  }
+  .frame {
+    width:800px; height:480px; border-radius:6px; overflow:hidden; position:relative;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; row-gap:8px; padding:16px;
+    font-size:14px; line-height:1.2; user-select:none; outline:8px solid #1d1f24;
+  }
+  .hint { color:#7a808c; font-size:13px; max-width:800px; line-height:1.6; }
+  .hint a { color:#92c2ff; }
+  .screen { display:flex; flex-direction:column; row-gap:8px; height:100%; }
+  #scr-settings { display:none; height:100%; flex-direction:column; row-gap:8px;
+                  overflow-y:auto; scrollbar-width:none; }
+  #scr-settings::-webkit-scrollbar { display:none; }
+
+  /* ---- top bar (36px) ---- */
+  .topbar { height:36px; display:flex; align-items:center; column-gap:10px; flex:none; }
+  .chip {
+    background:var(--card2); border-radius:14px; padding:7px 12px;
+    display:flex; align-items:center; column-gap:6px; color:var(--muted); font-size:14px;
+  }
+  .chip .dot { width:8px; height:8px; border-radius:4px; background:#979ba5; }
+  .chip .dot.on { background:var(--online); }
+  .spacer { flex:1; }
+  .gear {
+    width:36px; height:36px; border-radius:12px; background:var(--card2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    font-size:16px; color:var(--ink);
+  }
+  .gear:active { background:var(--press); }
+  .clock { font-size:30px; color:var(--ink); letter-spacing:1px; }
+
+  /* ---- header (52px) ---- */
+  .header { height:52px; display:flex; align-items:center; column-gap:10px; flex:none; }
+  .header .titles { display:flex; flex-direction:column; row-gap:4px; }
+  .title { font-size:18px; color:var(--ink); }
+  .date { font-size:14px; color:var(--muted); }
+  .greeting { font-size:14px; color:var(--muted); }
+
+  /* ---- main row (288px) ---- */
+  .main { flex:1; display:flex; column-gap:12px; min-height:0; }
+  .col-left { width:336px; display:flex; flex-direction:column; row-gap:8px; }
+  .col-right { flex:1; display:flex; flex-direction:column; row-gap:8px; }
+  .card {
+    background:var(--card); border-radius:22px; padding:14px; position:relative;
+  }
+  .weather { height:128px; }
+  .temp { font-size:30px; color:var(--ink); position:absolute; left:14px; top:14px; }
+  .wicon { font-size:30px; color:var(--accent); position:absolute; right:18px; top:14px; }
+  .wdesc { font-size:14px; color:var(--muted); position:absolute; left:14px; top:56px; }
+  .whum { position:absolute; left:14px; bottom:14px; color:var(--muted); }
+  .wupd { position:absolute; right:14px; bottom:34px; color:var(--muted); }
+  .wcity { position:absolute; right:14px; bottom:14px; color:var(--muted); }
+  .lights { height:50px; padding:8px 14px; display:flex; align-items:center; justify-content:space-between; }
+  .lights .cap { color:var(--muted); }
+  .lights .val { font-size:18px; color:var(--ink); }
+  .hourly { flex:1; padding:8px; }
+  .hcol {
+    position:absolute; top:6px; width:64px; display:flex; flex-direction:column;
+    align-items:center; row-gap:4px;
+  }
+  .hcol .ht { color:var(--muted); }
+  .hcol .hi { font-size:18px; color:var(--accent); }
+  .hcol .hp { color:var(--ink); }
+
+  .chcard {
+    position:relative; flex:1; background:var(--card); border-radius:22px; padding:12px 14px;
+    cursor:pointer; border:2px solid transparent;
+  }
+  .chcard:active { background:var(--press); }
+  .chcard.on { border-color:var(--accent); }
+  .chname { font-size:18px; color:var(--ink); }
+  .chkind { font-size:14px; color:var(--muted); margin-top:6px; }
+  .chstate { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--muted); }
+  .chcard.on .chstate { color:var(--accent); }
+
+  /* ---- scene bar (44px) ---- */
+  .scenebar { height:44px; display:flex; column-gap:10px; flex:none; }
+  .schip {
+    height:44px; background:var(--card2); border-radius:14px; padding:0 14px;
+    display:flex; align-items:center; column-gap:8px; cursor:pointer; color:var(--ink);
+  }
+  .schip:active { background:var(--press); }
+  .schip .ic { color:var(--accent); font-size:18px; }
+  .schip.more { color:var(--muted); }
+  .schip.active { border:2px solid var(--accent); }
+  .schip.active .nm { color:var(--accent); }
+
+  /* ---- scene overlay ---- */
+  #overlay {
+    position:absolute; inset:0; background:rgba(0,0,0,.6); display:none;
+    align-items:center; justify-content:center; z-index:10;
+  }
+  #overlay.open { display:flex; }
+  .opanel {
+    width:470px; height:404px; background:var(--card); border-radius:24px;
+    padding:14px; display:flex; flex-direction:column; row-gap:10px;
+  }
+  .opanel .head { display:flex; align-items:baseline; }
+  .opanel .ot { font-size:18px; color:var(--ink); }
+  .opanel .oh { margin-left:auto; font-size:14px; color:var(--muted); }
+  .orow {
+    height:58px; background:var(--card2); border-radius:16px; position:relative; cursor:pointer;
+    border:2px solid transparent;
+  }
+  .orow:active { background:var(--press); }
+  .orow.active { border-color:var(--accent); }
+  .orow .ic { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--accent); font-size:18px; }
+  .orow .nm { position:absolute; left:50px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--ink); }
+  .orow .ds { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); }
+
+  /* ---- settings ---- */
+  .shead { height:44px; display:flex; align-items:center; column-gap:12px; flex:none; }
+  .backbtn {
+    height:40px; padding:0 14px; border-radius:14px; background:var(--card2);
+    display:flex; align-items:center; column-gap:8px; cursor:pointer; color:var(--ink);
+  }
+  .backbtn:active { background:var(--press); }
+  .stitle { font-size:18px; color:var(--ink); }
+  .scap { color:var(--muted); flex:none; }
+  .themebtns { height:56px; display:flex; column-gap:10px; flex:none; }
+  .tchip {
+    height:52px; padding:0 16px; background:var(--card2); border-radius:16px;
+    display:flex; align-items:center; font-size:18px; color:var(--ink); cursor:pointer;
+    border:2px solid transparent;
+  }
+  .tchip:active { background:var(--press); }
+  .tchip.sel { border-color:var(--accent); }
+  .srow {
+    height:58px; flex:none; background:var(--card); border-radius:16px; padding:0 14px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .srow .cap { color:var(--muted); }
+  .srow .val { font-size:18px; color:var(--ink); }
+  .sw { width:52px; height:28px; border-radius:14px; background:var(--card2); position:relative; cursor:pointer; }
+  .sw::after {
+    content:''; position:absolute; top:3px; left:3px; width:22px; height:22px;
+    border-radius:11px; background:var(--muted); transition:left .15s;
+  }
+  .sw.on::after { left:27px; background:var(--accent); }
+</style>
+</head>
+<body>
+<div class="frame" id="frame" data-theme="cool" data-day="day">
+
+  <!-- ================= HOME ================= -->
+  <div class="screen" id="scr-home">
+    <div class="topbar">
+      <div class="chip"><div class="dot" id="mdot"></div><span id="mlbl">未配网</span></div>
+      <div class="chip">测试模式</div>
+      <div class="spacer"></div>
+      <div class="gear" id="gear">⚙</div>
+      <div class="clock">19:05</div>
+    </div>
+
+    <div class="header">
+      <div class="titles">
+        <div class="title">栖居</div>
+        <div class="date">10月7日 周三</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="greeting">晚上好，欢迎回家</div>
+    </div>
+
+    <div class="main">
+      <div class="col-left">
+        <div class="card weather">
+          <div class="temp">24°</div>
+          <div class="wicon">☀&#xFE0E;</div>
+          <div class="wdesc">晴 · 体感舒适</div>
+          <div class="whum">湿度 42%</div>
+          <div class="wupd">--:--</div>
+          <div class="wcity">杭州</div>
+        </div>
+        <div class="card lights">
+          <span class="cap">全屋灯具</span>
+          <span class="val" id="lightcount">1 / 2</span>
+        </div>
+        <div class="card hourly" id="hourly">
+          <div class="hcol" style="left:26px"><div class="ht">19时</div><div class="hi">☀&#xFE0E;</div><div class="hp">24°</div></div>
+          <div class="hcol" style="left:98px"><div class="ht">21时</div><div class="hi">☀&#xFE0E;</div><div class="hp">23°</div></div>
+          <div class="hcol" style="left:170px"><div class="ht">23时</div><div class="hi">☁&#xFE0E;</div><div class="hp">22°</div></div>
+          <div class="hcol" style="left:242px"><div class="ht">1时</div><div class="hi">☁&#xFE0E;</div><div class="hp">20°</div></div>
+        </div>
+      </div>
+      <div class="col-right" id="channels">
+        <div class="chcard" data-i="0">
+          <div class="chname">客厅主灯</div>
+          <div class="chkind">灯具控制</div>
+          <div class="chstate">已关闭</div>
+        </div>
+        <div class="chcard" data-i="1">
+          <div class="chname">餐厅吊灯</div>
+          <div class="chkind">灯具控制</div>
+          <div class="chstate">已关闭</div>
+        </div>
+        <div class="chcard" data-i="2">
+          <div class="chname">自定义联动</div>
+          <div class="chkind">自定义开关</div>
+          <div class="chstate">待触发</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scenebar" id="scenebar"></div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div id="scr-settings">
+    <div class="shead">
+      <div class="backbtn" id="back">← 返回</div>
+      <div class="stitle">设置</div>
+    </div>
+    <div class="scap">主题库</div>
+    <div class="themebtns" id="themes"></div>
+    <div class="scap">面板</div>
+    <div class="srow"><span class="cap">面板名称</span><span class="val">栖居</span></div>
+    <div class="srow"><span class="cap">天气城市</span><span class="val">杭州</span></div>
+    <div class="srow"><span class="cap">天气联动背景</span><div class="sw on" data-k="weather"></div></div>
+    <div class="srow"><span class="cap">昼夜自动切换</span><div class="sw on" data-k="time"></div></div>
+    <div class="scap">系统</div>
+    <div class="srow"><span class="cap">Matter</span><span class="val" id="smatter">未配网</span></div>
+    <div class="srow"><span class="cap">测试模式（输出保持断开）</span><div class="sw on" id="testsw"></div></div>
+  </div>
+
+  <!-- ================= SCENE OVERLAY ================= -->
+  <div id="overlay">
+    <div class="opanel" id="opanel">
+      <div class="head"><span class="ot">快捷场景</span><span class="oh">轻点执行 · 长按固定到首页</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="hint">
+  ↑ 固件触摸 UI 的 1:1 复刻（LVGL 布局/调色板/文案与 os/main/ui_*.cpp 一致）。可交互：点通道卡开关灯具、
+  点场景执行、齿轮进设置、主题芯片切换配色。默认状态 = 烧录后的初始状态（清透蓝 · 测试模式开 · 未配网 · 演示天气）。
+  开源原型 <a href="panel-preview.html">panel-preview.html</a> / <a href="settings.html">settings.html</a> 是更完整的设计稿（含编辑面板名、模拟天气等）。
+</div>
+
+<script>
+/* ---- state, mirrors app_snapshot_t defaults ---- */
+const channels = [
+  { name:'客厅主灯', kind:'light', on:false },
+  { name:'餐厅吊灯', kind:'light', on:false },
+  { name:'自定义联动', kind:'custom', triggered:false },
+];
+const SCENES = [
+  { id:0, ic:'⌂', nm:'回家', ds:'开启客厅、餐厅和走廊灯', t:[true,true]  },
+  { id:1, ic:'☾', nm:'休息', ds:'只留卧室灯',             t:[false,false] },
+  { id:2, ic:'↗', nm:'离家', ds:'关闭所有灯具',           t:[false,false] },
+  { id:3, ic:'▣', nm:'观影', ds:'只开启客厅主灯',         t:[true,false]  },
+  { id:4, ic:'▤', nm:'阅读', ds:'只开启卧室主灯',         t:[false,true]  },
+];
+let pinned = [0,1,2], activeScene = null, testMode = true;
+
+const $ = s => document.querySelector(s);
+const frame = $('#frame');
+
+function lightsCount() {
+  return channels.filter(c => c.kind==='light' && c.on).length + ' / ' +
+         channels.filter(c => c.kind==='light').length;
+}
+function renderChannels() {
+  document.querySelectorAll('.chcard').forEach(el => {
+    const c = channels[+el.dataset.i], st = el.querySelector('.chstate');
+    if (c.kind==='light') { st.textContent = c.on ? '已开启' : '已关闭'; el.classList.toggle('on', c.on); }
+    else { st.textContent = c.triggered ? '已触发' : '待触发'; el.classList.toggle('on', c.triggered); }
+  });
+  $('#lightcount').textContent = lightsCount();
+}
+function renderSceneBar() {
+  const bar = $('#scenebar'); bar.innerHTML = '';
+  pinned.forEach(id => {
+    const s = SCENES[id];
+    const el = document.createElement('div');
+    el.className = 'schip' + (activeScene===id ? ' active' : '');
+    el.innerHTML = `<span class="ic">${s.ic}</span><span class="nm">${s.nm}</span>`;
+    el.onclick = () => runScene(id);
+    bar.appendChild(el);
+  });
+  const more = document.createElement('div');
+  more.className = 'schip more'; more.textContent = '更多场景';
+  more.onclick = () => $('#overlay').classList.add('open');
+  bar.appendChild(more);
+}
+function runScene(id) {
+  const s = SCENES[id];
+  channels[0].on = s.t[0]; channels[1].on = s.t[1];
+  activeScene = id;
+  renderChannels(); renderSceneBar(); renderOverlay();
+  $('#overlay').classList.remove('open');
+}
+function renderOverlay() {
+  const p = $('#opanel');
+  p.querySelectorAll('.orow').forEach(e => e.remove());
+  SCENES.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'orow' + (activeScene===s.id ? ' active' : '');
+    el.innerHTML = `<span class="ic">${s.ic}</span><span class="nm">${s.nm}</span><span class="ds">${s.ds}</span>`;
+    el.onclick = () => runScene(s.id);
+    p.appendChild(el);
+  });
+}
+document.querySelectorAll('.chcard').forEach(el => {
+  el.addEventListener('click', () => {
+    const c = channels[+el.dataset.i];
+    if (c.kind==='light') c.on = !c.on; else c.triggered = !c.triggered;
+    renderChannels();
+  });
+});
+$('#gear').onclick = () => { $('#scr-home').style.display='none'; $('#scr-settings').style.display='flex'; };
+$('#back').onclick = () => { $('#scr-settings').style.display='none'; $('#scr-home').style.display='flex'; };
+$('#overlay').onclick = e => { if (e.target.id==='overlay') $('#overlay').classList.remove('open'); };
+
+/* theme chips */
+const THEMES = ['清透蓝','暖阳','薄荷','浅色'];
+function renderThemes() {
+  const w = $('#themes'); w.innerHTML = '';
+  THEMES.forEach((nm,i) => {
+    const el = document.createElement('div');
+    el.className = 'tchip' + (frame.dataset.theme===['cool','warm','mint','light'][i] ? ' sel' : '');
+    el.textContent = nm;
+    el.onclick = () => { frame.dataset.theme = ['cool','warm','mint','light'][i]; renderThemes(); };
+    w.appendChild(el);
+  });
+}
+document.querySelectorAll('.sw[data-k]').forEach(sw => {
+  sw.onclick = () => {
+    sw.classList.toggle('on');
+    if (sw.dataset.k==='time') frame.dataset.day = sw.classList.contains('on') ? 'day' : 'night';
+  };
+});
+$('#testsw').onclick = () => {
+  testMode = !testMode; $('#testsw').classList.toggle('on', testMode);
+  $('#mlbl').parentElement.style.display = testMode ? '' : 'none';
+};
+
+renderChannels(); renderSceneBar(); renderOverlay(); renderThemes();
+
+/* URL hash presets for screenshots */
+const h = location.hash;
+if (h.includes('warm')) frame.dataset.theme='warm';
+if (h.includes('mint')) frame.dataset.theme='mint';
+if (h.includes('light')) frame.dataset.theme='light';
+if (h.includes('night')) { frame.dataset.theme='cool'; frame.dataset.day='night'; }
+if (h.includes('scene1')) { runScene(0); }
+if (h.includes('settings')) { $('#gear').click(); }
+if (h.includes('overlay')) { $('#overlay').classList.add('open'); }
+</script>
+</body>
+</html>

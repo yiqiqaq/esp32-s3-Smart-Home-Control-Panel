@@ -11,6 +11,18 @@ idf_component_register(
          "scene_engine.cpp"
          "panel_services.cpp"
          "service_providers.cpp"
-    INCLUDE_DIRS "."
+         "bsp_display.cpp"
+         "ui_app.cpp"
+         "ui_theme.cpp"
+         "ui_home.cpp"
+         "ui_settings.cpp"
+         "fonts/font_panel_14.c"
+         "fonts/font_panel_18.c"
+         "fonts/font_panel_30.c"
+    INCLUDE_DIRS "." "fonts"
     REQUIRES esp_matter driver nvs_flash esp_timer esp_http_client json
-             esp_wifi esp_netif esp_event lwip mbedtls)
+             esp_wifi esp_netif esp_event lwip mbedtls
+             esp_lcd esp_lvgl_port lvgl)
+
+# Generated LVGL font sources include "lvgl.h" directly (not "lvgl/lvgl.h")
+target_compile_definitions(${COMPONENT_LIB} PRIVATE LV_LVGL_H_INCLUDE_SIMPLE=1)

@@ -15,6 +15,12 @@ extern "C" {
 esp_err_t matter_nodes_init(void);
 uint16_t matter_nodes_endpoint_id(uint8_t index); /* index 0..2 */
 
+/* Commissioning status for the UI top bar. matter_nodes_stack_started() is
+ * called once esp_matter::start() finished; the getter returns false before
+ * that because the fabric table is not initialised yet. */
+void matter_nodes_stack_started(void);
+bool matter_nodes_fabric_paired(void);
+
 /* Local-side updates pushed into the fabric (attribute::update). */
 esp_err_t matter_nodes_set_onoff(uint8_t index, bool on);
 

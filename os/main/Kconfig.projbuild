@@ -2,6 +2,14 @@ menu "Home panel hardware"
 config PANEL_TEST_MODE_DEFAULT
     bool "Start in safe test mode"
     default y
+config PANEL_ENABLE_SWITCH_INPUTS
+    bool "Enable physical switch inputs (GPIO debounce task)"
+    default n
+    help
+      Panel is touch-UI only by default: no GPIO switch task is started and
+      channel commands come from the touch UI, scenes and Matter writes.
+      The switch GPIO / contact-type / debounce / long-press options below
+      only take effect when this is enabled.
 config PANEL_SWITCH_1_GPIO
     int "Physical switch 1 GPIO"
     range 0 48

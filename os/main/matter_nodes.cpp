@@ -8,6 +8,7 @@
 #include <esp_matter_cluster.h>
 #include <esp_matter_event.h>
 #include <app-common/zap-generated/cluster-objects.h>
+#include <app/server/Server.h>
 #include <string.h>
 
 using namespace chip::app::Clusters;
@@ -16,6 +17,7 @@ using namespace esp_matter::endpoint;
 
 static const char *TAG = "matter_nodes";
 static uint16_t s_endpoint_ids[3];
+static bool s_stack_started;
 
 static esp_err_t attribute_update(attribute::callback_type_t type, uint16_t endpoint_id, uint32_t cluster_id,
                                   uint32_t attribute_id, esp_matter_attr_val_t *val, void *) {
@@ -89,6 +91,15 @@ esp_err_t matter_nodes_init(void) {
 
 uint16_t matter_nodes_endpoint_id(uint8_t index) {
     return index < 3 ? s_endpoint_ids[index] : 0;
+}
+
+void matter_nodes_stack_started(void) {
+    s_stack_started = true;
+}
+
+bool matter_nodes_fabric_paired(void) {
+    if (!s_stack_started) return false;
+    return chip::Server::GetInstance().GetFabricTable().FabricCount() > 0;
 }
 
 static bool is_light(uint8_t index) {

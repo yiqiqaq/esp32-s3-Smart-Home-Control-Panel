@@ -153,4 +153,6 @@ STA `GOT_IP` 启动 SNTP（`CONFIG_PANEL_NTP_SERVER` + `pool.ntp.org` 兜底，`
 - HTTP API 路由未实现（`SERVICE_API.md` 已定义契约）；`service_providers` 已就绪等接入。
 - 全屋灯具统计目前只含本机 2 路；远端灯具需 Matter 控制器订阅同步。
 - 每路“自定义动作”只有长按钩子，动作执行器待定义。
-- 4.3" DSI 屏无法直连 S3（无 MIPI DSI host），显示方案见 SERVICE_API.md“性能约束”。
+- 显示栈已落地（`bsp_display` + `ui_app`/`ui_home`/`ui_settings`，LVGL 9 + esp_lvgl_port，
+  Waveshare 4.3B RGB 屏 + GT911 触摸）：首页/设置页/场景浮层可交互，主题经 `theme_service`
+  调色板驱动；通道设置页、自定义开关详情页与全屋灯具列表仍待实现。
