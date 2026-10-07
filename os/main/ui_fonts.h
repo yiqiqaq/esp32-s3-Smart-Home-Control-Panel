@@ -11,6 +11,9 @@ extern "C" {
 LV_FONT_DECLARE(panel_14);
 LV_FONT_DECLARE(panel_18);
 LV_FONT_DECLARE(panel_30);
+/* GB2312 level-1 subset (3757 chars): renders free-text replies from the
+ * voice API. Larger than the UI subset by design. */
+LV_FONT_DECLARE(cn18);
 
 #ifdef __cplusplus
 }

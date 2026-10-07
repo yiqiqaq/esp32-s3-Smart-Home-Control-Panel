@@ -17,7 +17,9 @@ typedef struct {
 } app_nvs_blob_header_t;
 
 #define APP_NVS_CFG_MAGIC 0x504E4C31 /* "PNL1" */
-#define APP_NVS_CFG_VERSION 1
+/* v2: channel bindings. v3: manual action (scene key). v4: device-kind
+ * bindings (light/AC) + persisted AC state. Older blobs fall back to defaults. */
+#define APP_NVS_CFG_VERSION 4
 
 esp_err_t app_nvs_init(void);
 esp_err_t app_nvs_load(const char *key, void *out, size_t size, uint32_t magic, uint16_t version);

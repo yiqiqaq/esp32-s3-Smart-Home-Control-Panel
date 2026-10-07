@@ -1,5 +1,7 @@
 dependencies:
   espressif/esp_matter: ">=1.4.0"
-  # Display bring-up for Waveshare ESP32-S3-Touch-LCD-4.3B (RGB 800x480 + GT911)
+  # Display bring-up for Waveshare ESP32-S3-Touch-LCD-4.3C (RGB 800x480 + GT911)
   espressif/esp_lvgl_port: "^2.0.0"
   espressif/esp_lcd_touch_gt911: "^1.0.0"
+  # Onboard audio: ES8311 speaker codec + ES7210 mic ADC
+  espressif/esp_codec_dev: "^1.3.0"

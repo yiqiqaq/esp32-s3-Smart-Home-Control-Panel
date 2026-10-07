@@ -47,3 +47,40 @@
 - 固定数组上限由 `PANEL_MAX_LIGHTS` / `PANEL_MAX_SCENES` 控制；不为天气记录或每帧界面更新动态分配大块内存。
 - 不默认开启 PSRAM 专用内存、RGB framebuffer 或高刷新率动画，因为规格书不代表具体 S3 模组/开发板有 PSRAM 和指定屏幕接口。
 - 默认测试模式在 `menuconfig → Home panel hardware` 开启，并持久化到 NVS。进入真实运行模式前，须先连接并验证硬件 provider 和继电器安全逻辑。
+
+## 语音助手（v0.2 契约，固件已实现）
+
+语音 API 的地址与密钥由手机端写入面板，面板把录音交给该 API 并执行返回的动作。
+
+### 配置（面板作为 HTTP 服务端，端口 80，CORS 开放）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/v1/voice/config` | 返回 `{"api_url": "...", "api_key_set": true}`（密钥只写不读） |
+| POST | `/api/v1/voice/config` | body `{"api_url": "...", "api_key": "..."}`，持久化到 NVS |
+
+### 查询（面板 → 语音 API，POST api_url）
+
+- 请求体：WAV（16 kHz / 16 bit / 单声道），头 `X-Api-Key: <key>`，`Content-Type: audio/wav`
+- 音乐控制改为 JSON body：`{"cmd": "play|pause|next|prev"}` 或 `{"volume": 40}`
+- 响应体：
+
+```json
+{
+  "reply": "好的，已为你打开客厅主灯",
+  "tts_url": "https://.../tts.wav",
+  "action": {
+    "type": "light",  "light": 1, "on": true,
+    "type": "scene",  "scene": 0,
+    "type": "bind",   "channel": 3, "mode": "light", "light": 1,
+                      "mode": "manual", "action_scene": 0,
+    "type": "music",  "playing": true, "title": "歌名", "volume": 40,
+    "type": "ac",     "ac": 1, "on": true, "mode": "cool|heat",
+                     "fan": "auto|low|mid|high", "temp": 26, "temp_now": 27
+  }
+}
+```
+
+- `reply`：面板全屏语音层显示的应答文本；`tts_url` 可选，指向 16k/16-bit/单声道 WAV，面板拉流播放（PA 自动使能）。
+- `action` 可选；`light`/`ac` 的索引从 1 开始；`ac.mode` 取 cool/heat、`ac.fan` 取 auto/low/mid/high、`temp` 为设定温度（16–30）、`temp_now` 为上报室温（仅更新显示）；`bind.mode` 取 light（配 `light` 索引）/manual（可用 `action_scene` 配成场景键）/ac（配 `ac` 索引）。
+- 未实现：MP3/AAC 解码（TTS 暂只支持 WAV）、流式音乐播放管线。

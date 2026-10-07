@@ -1,5 +1,5 @@
 #include "bsp_display.h"
-#include "bsp_43b.h"
+#include "bsp_43c.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_rom_sys.h"
@@ -17,16 +17,16 @@
 static const char *TAG = "bsp_display";
 
 static i2c_master_bus_handle_t s_i2c_bus;
-static i2c_master_dev_handle_t s_ch422g_mode; /* SET register @0x24 */
-static i2c_master_dev_handle_t s_ch422g_out;  /* OUT register @0x38 */
+static i2c_master_dev_handle_t s_ch422g; /* single address 0x24, register writes */
+static uint8_t s_ch422g_shadow;          /* cached CH422G output-register bitmap */
 static esp_lcd_panel_handle_t s_panel;
 static esp_lcd_touch_handle_t s_touch;
 
 static esp_err_t i2c_bus_init(void) {
     i2c_master_bus_config_t bus_cfg = {
         .i2c_port = 0,
-        .sda_io_num = (gpio_num_t)BSP_I2C_SDA,
-        .scl_io_num = (gpio_num_t)BSP_I2C_SCL,
+        .sda_io_num = BSP_I2C_SDA,
+        .scl_io_num = BSP_I2C_SCL,
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
         .flags = { .enable_internal_pullup = true },
@@ -35,39 +35,41 @@ static esp_err_t i2c_bus_init(void) {
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = BSP_CH422G_ADDR_MODE,
+        .device_address = BSP_CH422G_ADDR,
         .scl_speed_hz = BSP_I2C_SPEED_HZ,
     };
-    ESP_RETURN_ON_ERROR(i2c_master_bus_add_device(s_i2c_bus, &dev_cfg, &s_ch422g_mode), TAG, "ch422g mode");
-    dev_cfg.device_address = BSP_CH422G_ADDR_OUT;
-    ESP_RETURN_ON_ERROR(i2c_master_bus_add_device(s_i2c_bus, &dev_cfg, &s_ch422g_out), TAG, "ch422g out");
+    ESP_RETURN_ON_ERROR(i2c_master_bus_add_device(s_i2c_bus, &dev_cfg, &s_ch422g), TAG, "ch422g");
     return ESP_OK;
 }
 
-static esp_err_t ch422g_set_output(uint8_t value) {
-    return i2c_master_transmit(s_ch422g_out, &value, 1, 50);
+/* CH422G: two-byte register writes on one address (vendor io_extension.c) */
+static esp_err_t ch422g_write(uint8_t reg, uint8_t value) {
+    uint8_t data[2] = { reg, value };
+    return i2c_master_transmit(s_ch422g, data, 2, 50);
 }
 
-static esp_err_t ch422g_output_mode(void) {
-    uint8_t mode = BSP_CH422G_MODE_OUTPUT;
-    return i2c_master_transmit(s_ch422g_mode, &mode, 1, 50);
+static esp_err_t ch422g_output_update(void) {
+    return ch422g_write(BSP_CH422G_REG_OUT, s_ch422g_shadow);
 }
 
-/* Vendor reset sequence: TP_RST low via CH422G EXIO1, ESP32 holds the GT911 INT
- * line low across the reset release, which latches the 0x5D I2C address. */
+/* Vendor reset sequence: TP_RST low via CH422G, ESP32 holds the GT911 INT
+ * line low across the reset release, which latches the 0x5D I2C address.
+ * SD_CS is deselected, backlight and PA stay off during bring-up. */
 static esp_err_t touch_reset(void) {
-    ESP_RETURN_ON_ERROR(ch422g_output_mode(), TAG, "ch422g mode");
+    ESP_RETURN_ON_ERROR(ch422g_write(BSP_CH422G_REG_MODE, 0xFF), TAG, "ch422g mode");
+    s_ch422g_shadow = BSP_CH422G_BIT_SD_CS;
+    ESP_RETURN_ON_ERROR(ch422g_output_update(), TAG, "tp rst low");
     gpio_config_t io_conf = {
         .pin_bit_mask = 1ULL << BSP_TOUCH_INT,
         .mode = GPIO_MODE_OUTPUT,
     };
     gpio_config(&io_conf);
 
-    ESP_RETURN_ON_ERROR(ch422g_set_output(BSP_CH422G_OUT_TP_RESET_LOW), TAG, "tp rst low");
     esp_rom_delay_us(100 * 1000);
-    gpio_set_level((gpio_num_t)BSP_TOUCH_INT, 0);
+    gpio_set_level(BSP_TOUCH_INT, 0);
     esp_rom_delay_us(100 * 1000);
-    ESP_RETURN_ON_ERROR(ch422g_set_output(BSP_CH422G_OUT_TP_RESET_HIGH), TAG, "tp rst high");
+    s_ch422g_shadow |= BSP_CH422G_BIT_TP_RST;
+    ESP_RETURN_ON_ERROR(ch422g_output_update(), TAG, "tp rst high");
     esp_rom_delay_us(200 * 1000);
 
     /* Release the INT line so the GT911 can drive it again; touch is polled. */
@@ -118,9 +120,7 @@ esp_err_t bsp_display_init(void) {
     ESP_RETURN_ON_ERROR(esp_lcd_new_rgb_panel(&panel_cfg, &s_panel), TAG, "rgb panel");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(s_panel), TAG, "rgb init");
 
-    /* GT911: reset already done through CH422G; poll via esp_lvgl_port.
-     * Field order follows esp_lcd_panel_io_i2c_config_t (IDF >= 5.4); the
-     * controller macro in esp_lcd_touch_gt911 targets an older layout. */
+    /* GT911: reset already done through CH422G; poll via esp_lvgl_port. */
     esp_lcd_panel_io_handle_t tp_io = NULL;
     const esp_lcd_panel_io_i2c_config_t tp_io_cfg = {
         .dev_addr = ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS,
@@ -134,7 +134,7 @@ esp_err_t bsp_display_init(void) {
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = BSP_LCD_H_RES,
         .y_max = BSP_LCD_V_RES,
-        .rst_gpio_num = (gpio_num_t)BSP_TOUCH_RST,
+        .rst_gpio_num = BSP_TOUCH_RST,
         .int_gpio_num = GPIO_NUM_NC,
         .levels = { .reset = 0, .interrupt = 0 },
         .flags = { .swap_xy = 0, .mirror_x = 0, .mirror_y = 0 },
@@ -170,11 +170,24 @@ esp_err_t bsp_display_init(void) {
     lv_indev_t *indev = lvgl_port_add_touch(&touch_cfg);
     ESP_RETURN_ON_FALSE(indev != NULL, ESP_FAIL, TAG, "lvgl touch");
 
-    ESP_LOGI(TAG, "display stack ready");
+    ESP_LOGI(TAG, "display stack ready (4.3C)");
     return ESP_OK;
 }
 
 esp_err_t bsp_display_backlight_on(void) {
-    ESP_RETURN_ON_ERROR(ch422g_output_mode(), TAG, "ch422g mode");
-    return ch422g_set_output(BSP_CH422G_OUT_BACKLIGHT_ON);
+    s_ch422g_shadow |= BSP_CH422G_BIT_TP_RST | BSP_CH422G_BIT_BACKLIGHT;
+    return ch422g_output_update();
+}
+
+i2c_master_bus_handle_t bsp_display_i2c_bus(void) {
+    return s_i2c_bus;
+}
+
+esp_err_t bsp_board_ch422g_set_bit(uint8_t bit_mask, bool on) {
+    if (on) {
+        s_ch422g_shadow |= bit_mask;
+    } else {
+        s_ch422g_shadow &= (uint8_t)~bit_mask;
+    }
+    return ch422g_output_update();
 }

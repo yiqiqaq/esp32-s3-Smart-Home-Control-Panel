@@ -32,27 +32,27 @@ static esp_err_t provider_weather_get(panel_weather_t *out) {
 
 static esp_err_t provider_lights_get(panel_light_t *out, uint8_t capacity, uint8_t *count) {
     if (!out || !count) return ESP_ERR_INVALID_ARG;
-    if (capacity < PANEL_CHANNEL_COUNT) return ESP_ERR_INVALID_SIZE;
+    if (capacity < PANEL_LIGHT_COUNT) return ESP_ERR_INVALID_SIZE;
     app_snapshot_t snap;
     app_state_get_snapshot(&snap);
-    for (uint8_t i = 0; i < PANEL_CHANNEL_COUNT; ++i) {
+    for (uint8_t i = 0; i < PANEL_LIGHT_COUNT; ++i) {
         panel_light_t *l = &out[i];
         memset(l, 0, sizeof(*l));
-        snprintf(l->id, sizeof(l->id), "ch%u", i + 1);
-        strlcpy(l->name, snap.channels[i].name, sizeof(l->name));
+        snprintf(l->id, sizeof(l->id), "light%u", i + 1);
+        strlcpy(l->name, snap.lights[i].name, sizeof(l->name));
         strlcpy(l->room, "客厅", sizeof(l->room));
-        l->is_on = snap.channels[i].on;
-        l->is_light = snap.channels[i].kind == CH_KIND_LIGHT; /* generic switch excluded */
+        l->is_on = snap.lights[i].on;
+        l->is_light = true;
     }
-    *count = PANEL_CHANNEL_COUNT;
+    *count = PANEL_LIGHT_COUNT;
     return ESP_OK;
 }
 
 static esp_err_t provider_light_set(const char *id, bool on) {
-    if (!id || strlen(id) < 3 || id[0] != 'c' || id[1] != 'h') return ESP_ERR_NOT_FOUND;
-    const int index = id[2] - '1';
-    if (index < 0 || index >= PANEL_CHANNEL_COUNT) return ESP_ERR_NOT_FOUND;
-    channel_router_set_channel((uint8_t)index, on, CH_SRC_LOCAL);
+    if (!id || strlen(id) < 5 || strncmp(id, "light", 5) != 0) return ESP_ERR_NOT_FOUND;
+    const int index = id[5] - '1';
+    if (index < 0 || index >= PANEL_LIGHT_COUNT) return ESP_ERR_NOT_FOUND;
+    channel_router_set_light((uint8_t)index, on, CH_SRC_LOCAL);
     return ESP_OK;
 }
 
@@ -69,10 +69,7 @@ static esp_err_t provider_scenes_get(panel_scene_t *out, uint8_t capacity, uint8
         strlcpy(s->id, kSceneIds[scenes[i].id], sizeof(s->id));
         strlcpy(s->name, scenes[i].name, sizeof(s->name));
         strlcpy(s->icon, scenes[i].icon, sizeof(s->icon));
-        s->pinned = false;
-        for (uint8_t p = 0; p < PINNED_SCENE_MAX; ++p) {
-            if (snap.config.pinned[p] == scenes[i].id) s->pinned = true;
-        }
+        s->pinned = false; /* scene pinning was removed; the bar shows all six */
     }
     *count = total;
     return ESP_OK;

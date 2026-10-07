@@ -1,10 +1,12 @@
 #include "ui_app.h"
 #include "ui_home.h"
 #include "ui_settings.h"
+#include "ui_voice.h"
 #include "ui_theme.h"
 #include "bsp_display.h"
 #include "app_state.h"
 #include "matter_nodes.h"
+#include "voice_assistant.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
@@ -77,6 +79,9 @@ static void sync_timer_cb(lv_timer_t *timer) {
     bool matter_paired = matter_nodes_fabric_paired();
     ui_home_apply(&snap, matter_paired);
     ui_settings_apply(&snap, matter_paired);
+    ui_home_music_update(voice_assistant_music_active(), voice_assistant_music_title(),
+                         voice_assistant_music_volume(),
+                         voice_assistant_state() == VOICE_SPEAKING);
 }
 
 void ui_app_open_settings(void) {
@@ -116,6 +121,7 @@ esp_err_t ui_app_init(void) {
     lv_timer_create(sync_timer_cb, 250, NULL);
     lvgl_port_unlock();
 
+    ESP_RETURN_ON_ERROR(ui_voice_init(), TAG, "voice ui");
     ESP_RETURN_ON_ERROR(app_state_subscribe(state_listener, NULL), TAG, "subscribe");
     ESP_RETURN_ON_ERROR(bsp_display_backlight_on(), TAG, "backlight");
     ESP_LOGI(TAG, "touch UI ready (800x480, LVGL %d.%d)", lv_version_major(), lv_version_minor());

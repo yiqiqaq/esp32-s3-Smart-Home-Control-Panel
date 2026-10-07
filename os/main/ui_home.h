@@ -14,6 +14,9 @@ extern "C" {
 void ui_home_build(lv_obj_t *parent);
 void ui_home_apply(const app_snapshot_t *snap, bool matter_paired);
 
+/* Show/hide the now-playing bar and refresh its title/volume. */
+void ui_home_music_update(bool active, const char *title, int volume, bool playing);
+
 #ifdef __cplusplus
 }
 #endif

@@ -21,10 +21,22 @@ static app_state_listener_t s_listeners[MAX_LISTENERS];
 static void *s_listener_ctx[MAX_LISTENERS];
 static bool s_dirty; /* a notify is pending because the snapshot changed */
 
+const char *const kPanelRooms[PANEL_ROOM_COUNT] = {"客厅", "餐厅", "卧室", "走廊", "阳台"};
+
+static const light_t kDefaultLights[PANEL_LIGHT_COUNT] = {
+    {"客厅主灯", false, 0, -1},
+    {"餐厅吊灯", false, 1, -1},
+};
+
+static const ac_t kDefaultAcs[PANEL_AC_COUNT] = {
+    {"客厅空调", false, AC_MODE_COOL, AC_FAN_AUTO, 26, 26, 0},
+    {"卧室空调", false, AC_MODE_COOL, AC_FAN_AUTO, 26, 26, 3},
+};
+
 static const channel_t kDefaultChannels[PANEL_CHANNEL_COUNT] = {
-    {"客厅主灯", CH_KIND_LIGHT, false, false, 0, -1},
-    {"餐厅吊灯", CH_KIND_LIGHT, false, false, 0, -1},
-    {"自定义联动", CH_KIND_CUSTOM, false, false, 0, -1},
+    {"客厅开关", false, 0, -1},
+    {"餐厅开关", false, 0, -1},
+    {"自定义联动", false, 0, -1},
 };
 
 static app_config_t default_config(void) {
@@ -38,16 +50,27 @@ static app_config_t default_config(void) {
     cfg.pinned[0] = SC_HOME;
     cfg.pinned[1] = SC_REST;
     cfg.pinned[2] = SC_AWAY;
+    /* Out of the box the first two keys act as their light's wall switch. */
+    for (int i = 0; i < PANEL_CHANNEL_COUNT; ++i) {
+        cfg.channel_binding[i] = CH_BIND_MANUAL;
+        cfg.channel_dev_kind[i] = DEV_LIGHT;
+        cfg.channel_dev[i] = -1;
+        cfg.channel_action[i] = PANEL_ACTION_EVENTS;
+    }
+    cfg.channel_binding[0] = CH_BIND_LIGHT;
+    cfg.channel_dev_kind[0] = DEV_LIGHT;
+    cfg.channel_dev[0] = 0;
+    cfg.channel_binding[1] = CH_BIND_LIGHT;
+    cfg.channel_dev_kind[1] = DEV_LIGHT;
+    cfg.channel_dev[1] = 1;
     return cfg;
 }
 
 static void recount_lights(void) {
     s_state.lights_on = 0;
-    s_state.lights_total = 0;
-    for (int i = 0; i < PANEL_CHANNEL_COUNT; ++i) {
-        if (s_state.channels[i].kind != CH_KIND_LIGHT) continue; /* generic switch never counted */
-        ++s_state.lights_total;
-        if (s_state.channels[i].on) ++s_state.lights_on;
+    s_state.lights_total = PANEL_LIGHT_COUNT;
+    for (int i = 0; i < PANEL_LIGHT_COUNT; ++i) {
+        if (s_state.lights[i].on) ++s_state.lights_on;
     }
 }
 
@@ -86,6 +109,8 @@ esp_err_t app_state_init(void) {
     if (!s_mutex || !s_notify_queue) return ESP_ERR_NO_MEM;
 
     memset(&s_state, 0, sizeof(s_state));
+    memcpy(s_state.lights, kDefaultLights, sizeof(kDefaultLights));
+    memcpy(s_state.acs, kDefaultAcs, sizeof(kDefaultAcs));
     memcpy(s_state.channels, kDefaultChannels, sizeof(kDefaultChannels));
     s_state.active_scene = 0xFF;
 
@@ -94,6 +119,14 @@ esp_err_t app_state_init(void) {
         app_nvs_save(CFG_KEY, &cfg, sizeof(cfg), APP_NVS_CFG_MAGIC, APP_NVS_CFG_VERSION);
     }
     s_state.config = cfg;
+    /* runtime room temperature starts at the persisted setpoint */
+    for (int i = 0; i < PANEL_AC_COUNT; ++i) {
+        s_state.acs[i].on = cfg.ac_on[i];
+        s_state.acs[i].mode = cfg.ac_mode[i];
+        s_state.acs[i].fan = cfg.ac_fan[i];
+        s_state.acs[i].temp_set = cfg.ac_temp[i];
+        s_state.acs[i].temp_now = cfg.ac_temp[i];
+    }
 
     /* GPIO numbers are provided by the caller modules after Kconfig is resolved. */
     s_dirty = false;
@@ -114,12 +147,50 @@ void app_state_bind_gpio(const uint8_t switch_gpio[PANEL_CHANNEL_COUNT],
     xSemaphoreGive(s_mutex);
 }
 
-esp_err_t app_state_set_channel(uint8_t index, bool on, bool triggered) {
+esp_err_t app_state_set_light(uint8_t light_index, bool on) {
+    if (light_index >= PANEL_LIGHT_COUNT) return ESP_ERR_INVALID_ARG;
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    s_state.lights[light_index].on = on;
+    recount_lights();
+    request_notify_locked();
+    xSemaphoreGive(s_mutex);
+    kick_notify();
+    return ESP_OK;
+}
+
+esp_err_t app_state_set_ac(uint8_t ac_index, bool on, uint8_t mode, uint8_t fan, int8_t temp_set) {
+    if (ac_index >= PANEL_AC_COUNT) return ESP_ERR_INVALID_ARG;
+    if (temp_set < 16) temp_set = 16;
+    if (temp_set > 30) temp_set = 30;
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    s_state.acs[ac_index].on = on;
+    s_state.acs[ac_index].mode = mode;
+    s_state.acs[ac_index].fan = fan;
+    s_state.acs[ac_index].temp_set = temp_set;
+    request_notify_locked();
+    app_config_t cfg = s_state.config;
+    xSemaphoreGive(s_mutex);
+    cfg.ac_on[ac_index] = on;
+    cfg.ac_mode[ac_index] = mode;
+    cfg.ac_fan[ac_index] = fan;
+    cfg.ac_temp[ac_index] = temp_set;
+    return app_nvs_save(CFG_KEY, &cfg, sizeof(cfg), APP_NVS_CFG_MAGIC, APP_NVS_CFG_VERSION);
+}
+
+esp_err_t app_state_set_ac_room_temp(uint8_t ac_index, int8_t temp_now) {
+    if (ac_index >= PANEL_AC_COUNT) return ESP_ERR_INVALID_ARG;
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    s_state.acs[ac_index].temp_now = temp_now;
+    request_notify_locked();
+    xSemaphoreGive(s_mutex);
+    kick_notify();
+    return ESP_OK;
+}
+
+esp_err_t app_state_set_switch(uint8_t index, bool triggered) {
     if (index >= PANEL_CHANNEL_COUNT) return ESP_ERR_INVALID_ARG;
     xSemaphoreTake(s_mutex, portMAX_DELAY);
-    s_state.channels[index].on = on;
     s_state.channels[index].triggered = triggered;
-    recount_lights();
     request_notify_locked();
     xSemaphoreGive(s_mutex);
     kick_notify();
@@ -185,14 +256,6 @@ void app_state_get_snapshot(app_snapshot_t *out) {
     xSemaphoreTake(s_mutex, portMAX_DELAY);
     *out = s_state;
     xSemaphoreGive(s_mutex);
-}
-
-uint8_t app_state_channel_kind(uint8_t index) {
-    if (index >= PANEL_CHANNEL_COUNT) return 0xFF;
-    xSemaphoreTake(s_mutex, portMAX_DELAY);
-    const uint8_t kind = s_state.channels[index].kind;
-    xSemaphoreGive(s_mutex);
-    return kind;
 }
 
 esp_err_t app_state_subscribe(app_state_listener_t listener, void *ctx) {

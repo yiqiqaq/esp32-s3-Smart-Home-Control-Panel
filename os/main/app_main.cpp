@@ -11,6 +11,9 @@
 #include "scene_engine.h"
 #include "service_providers.h"
 #include "ui_app.h"
+#include "bsp_audio.h"
+#include "voice_assistant.h"
+#include "service_http.h"
 #include "sdkconfig.h"
 #include <esp_matter.h>
 
@@ -37,7 +40,12 @@ extern "C" void app_main() {
     ESP_ERROR_CHECK(weather_service_init());
     ESP_ERROR_CHECK(matter_nodes_init());
     ESP_ERROR_CHECK(service_providers_register());
+    esp_err_t audio_err = bsp_audio_init();
+    if (audio_err != ESP_OK) ESP_LOGW(TAG, "audio init failed: %s", esp_err_to_name(audio_err));
+    ESP_ERROR_CHECK(voice_assistant_init());
     ESP_ERROR_CHECK(ui_app_init());
+    esp_err_t http_err = service_http_start();
+    if (http_err != ESP_OK) ESP_LOGW(TAG, "http service failed: %s", esp_err_to_name(http_err));
     ESP_ERROR_CHECK(esp_matter::start(nullptr));
     matter_nodes_stack_started();
 #if CONFIG_PANEL_ENABLE_SWITCH_INPUTS

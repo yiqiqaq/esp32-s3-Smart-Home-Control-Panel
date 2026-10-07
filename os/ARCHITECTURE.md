@@ -53,13 +53,14 @@
 ## 4. 数据流（对齐 UI_DESIGN.md“事件与数据流”）
 
 ```
-实体开关 GPIO ─→ 消抖状态机 ─→ 通道用途路由 ─┬─ 灯具:   Matter OnOff 属性 + 隔离继电器
-                                            └─ 自定义: Generic Switch 事件 + 本地动作钩子
-Matter 客户端 OnOff 写入 (CHIP 任务, PRE_UPDATE) ─→ 同一路由层 ─→ 继电器 + 状态模型
-场景执行 (SC_*) ─→ 通道路由 (src=SCENE) ─→ 本机 2 路灯具
+实体开关 GPIO ─→ 消抖状态机 ─→ 绑定路由 ─┬─ 绑定灯具: 切换绑定灯 (Matter OnOff + 继电器跟随)
+                                         └─ 手动控制: 按键事件上报 / 场景键（触发绑定场景）
+触摸 UI 卡片 ─→ 同一绑定路由（绑定卡=灯光开关，手动卡=事件合成）
+Matter 客户端 OnOff 写入灯端点 (CHIP 任务, PRE_UPDATE) ─→ 路由层 ─→ 继电器跟随 + 状态模型
+场景执行 (SC_*) ─→ set_light (src=SCENE) ─→ 本机 2 路灯
 天气源 HTTPS ─→ weather_service(WMO 映射+采样) ─→ app_state ─→ NVS 缓存
 系统时钟/SNTP ─→ time_service(问候/昼夜) ─→ app_state
-app_state 变更 ─→ state_notify 任务 ─→ 监听者(未来 UI) + 全屋灯具计数
+app_state 变更 ─→ state_notify 任务 ─→ 监听者(UI) + 全屋灯具计数
 ```
 
 ## 5. 核心算法
@@ -81,13 +82,14 @@ elif candidate != stable:
 - **翘板模式**：每次 stable 翻转发 `SW_LEVEL(level)`，灯具同步到触点位置（双稳态同步，不按 toggle 处理）。
 - 上电时把当前触点状态收养为 stable，避免开机误发事件。
 
-### 5.2 通道用途路由（channel_router.cpp）
+### 5.2 绑定路由（channel_router.cpp）
 
-三个命令源（`CH_SRC_LOCAL/SCENE/MATTER`）汇聚到 `channel_router_set_channel()`：
+三路通道全部是自定义开关，绑定关系存于用户配置（`channel_binding[]`/`channel_bind_light[]`，随 PNL1 v2 持久化）：
 
-- 非 MATTER 源先 `attribute::update()` 通知 Matter fabric，再写继电器、再更新状态模型；
-- MATTER 源（CHIP 任务 `PRE_UPDATE` 回调）直接写继电器 + 状态模型（GPIO 写幂等，状态模型有锁）；
-- `CH_KIND_CUSTOM` 通道不进灯具统计：按下→`InitialPress`、松开→`ShortRelease`、翘板→`SwitchLatched(position)`、长按→本地动作钩子（预留）。
+- **绑定设备**（`CH_BIND_LIGHT` + `channel_dev_kind`）：绑灯时开/关切换灯（`set_light`），绑空调时按键切换空调电源（`app_state_set_ac`，状态随 PNL1 v4 持久化）；
+- **手动控制**（`CH_BIND_MANUAL`）：未配置动作时按下→`InitialPress`、松开→`ShortRelease`、翘板→`SwitchLatched(position)`、长按→本地动作钩子（预留）；配置了场景动作（`channel_action[]`）则为场景键——按下触发绑定场景，不再上报按键事件；
+- 灯命令源（`CH_SRC_LOCAL/SCENE/MATTER`）汇聚到 `set_light()`：非 MATTER 源先 `attribute::update()` 通知 fabric；继电器"跟随灯"——所有绑定到该灯的通道继电器同步动作（默认绑定 1:1）；
+- MATTER 源（CHIP 任务 `PRE_UPDATE` 回调）直接写继电器 + 状态模型（GPIO 写幂等，状态模型有锁）。
 
 **安全**：继电器上电默认全灭；`panel_services_test_mode()` 为真时 `relay_write()` 直接返回——逻辑全跑、输出全断。
 
@@ -100,7 +102,7 @@ home:[1,1,0,1,0]  rest:[0,0,1,0,0]  away:[0,0,0,0,0]
 movie:[1,0,0,0,0] read:[0,0,1,0,0]
 ```
 
-固件只执行本机 2 路（下标 0/1），下标 2–4 留给家庭控制器同步（当前边界，README 已注明）。固定场景在 `app_state_update_config` 中原子地做 read-modify-write，空槽 `0xFF`、上限 3、溢出返回 `ESP_ERR_INVALID_STATE`，并持久化。
+固件只执行本机 2 路（下标 0/1），下标 2–4 留给家庭控制器同步（当前边界，README 已注明）。场景集合固定六个（UI 直出全部，无场景库浮层）；未来由控制器导入的场景同样以 6 为上限。
 
 ### 5.4 天气适配器（weather_service.cpp）
 
@@ -129,20 +131,20 @@ STA `GOT_IP` 启动 SNTP（`CONFIG_PANEL_NTP_SERVER` + `pool.ntp.org` 兜底，`
 
 ### 5.7 状态模型与持久化（app_state.cpp / app_nvs.cpp）
 
-- 唯一状态源 `app_snapshot_t`：3 通道（名称/用途/状态/GPIO）+ 用户配置 + 天气 + 时间 + 灯具计数 + 活动场景。互斥锁保护，`app_state_get_snapshot()` 取副本。
+- 唯一状态源 `app_snapshot_t`：2 路灯（名称/状态）+ 3 通道开关（名称/绑定/触发态/GPIO）+ 用户配置（含绑定）+ 天气 + 时间 + 灯具计数 + 活动场景。互斥锁保护，`app_state_get_snapshot()` 取副本。
 - 变更走 `commit → 置脏 → 通知队列`；`state_notify` 任务在锁外串行调用监听者，慢消费者不会阻塞生产者。
-- **灯具统计**：只数 `CH_KIND_LIGHT` 通道，Generic Switch 不进分子也不进分母（UI_DESIGN.md 规则）。远端灯具待家庭控制器同步后并入。
-- NVS blob 统一 `magic + version` 头（配置 `PNL1`、天气 `WETH`），版本不符自动回退默认值并重写；只在用户显式改动或天气成功拉取时写盘，寿命友好。
+- **灯具统计**：数 `lights[2]`（本机两路灯实体），开关不进分子也不进分母（UI_DESIGN.md 规则）。远端灯具待家庭控制器同步后并入。
+- NVS blob 统一 `magic + version` 头（配置 `PNL1` v2——含通道绑定、天气 `WETH`），版本不符自动回退默认值并重写；只在用户显式改动或天气成功拉取时写盘，寿命友好。
 
 ## 6. Matter 数据模型（matter_nodes.cpp）
 
 | Endpoint | Device type | 集群/事件 |
 |---|---|---|
-| 1 | On/Off Light | OnOff 属性；本地/场景改动经 `attribute::update()` 上报 |
-| 2 | On/Off Light | 同上 |
-| 3 | Generic Switch | Switch 集群（2 位），显式添加 `momentary_switch` + `action_switch` feature；`InitialPress/ShortRelease/SwitchLatched` 事件 |
+| 1 | On/Off Light | 灯 1（客厅主灯）OnOff 属性；本地/场景改动经 `attribute::update()` 上报 |
+| 2 | On/Off Light | 灯 2（餐厅吊灯）同上 |
+| 3–5 | Generic Switch | 每通道一个开关端点；Switch 集群（2 位），`momentary_switch` + `action_switch` feature；手动绑定通道上报 `InitialPress/ShortRelease/SwitchLatched` |
 
-远端 OnOff 写入由 `attribute_update` 回调（`PRE_UPDATE`，CHIP 任务）转给路由层——这是 Matter 与本机输出之间唯一的桥。AP 侧使用测试 DAC/PAI，量产前必须替换正式认证材料（README 安全边界）。
+灯端点可被三路开关任意绑定（固件内路由，改变绑定无需重新配网）；手动通道的事件经 Switch 集群上报，供中枢做自动化。远端 OnOff 写入由 `attribute_update` 回调（`PRE_UPDATE`，CHIP 任务）转给路由层——这是 Matter 与本机输出之间唯一的桥。AP 侧使用测试 DAC/PAI，量产前必须替换正式认证材料（README 安全边界）。
 
 ## 7. 配置项（menuconfig → Home panel hardware）
 
@@ -154,5 +156,7 @@ STA `GOT_IP` 启动 SNTP（`CONFIG_PANEL_NTP_SERVER` + `pool.ntp.org` 兜底，`
 - 全屋灯具统计目前只含本机 2 路；远端灯具需 Matter 控制器订阅同步。
 - 每路“自定义动作”只有长按钩子，动作执行器待定义。
 - 显示栈已落地（`bsp_display` + `ui_app`/`ui_home`/`ui_settings`，LVGL 9 + esp_lvgl_port，
-  Waveshare 4.3B RGB 屏 + GT911 触摸）：首页/设置页/场景浮层可交互，主题经 `theme_service`
-  调色板驱动；通道设置页、自定义开关详情页与全屋灯具列表仍待实现。
+  Waveshare 4.3C RGB 屏 + GT911 触摸 + 板载 ES8311/ES7210 双麦音频）。
+- 语音助手已搭骨架：`bsp_audio`（I2S1 全双工 16k，PA 经 CH422G IO3）→ `voice_assistant`
+  （录音→POST 用户 API→JSON 动作分发到路由/场景/绑定/媒体，TTS WAV 回放）→ `ui_voice`
+  （小爱风格全屏层）→ `service_http`（手机端写入 API 地址/密钥）。真机联调与流式播放待做。
